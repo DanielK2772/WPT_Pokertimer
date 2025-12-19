@@ -66,30 +66,17 @@
 
         #playerList::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.4); }
 
-        .poker-chip {
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            border: 5px dashed; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
-        }
-
-        .poker-chip-inner {
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; 
-            font-weight: 900; font-size: 0.75rem;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-            z-index: 2;
-            border: 2px solid rgba(255,255,255,0.15);
+        .chip-canvas-wrapper {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .dragging { opacity: 0.5; border: 2px dashed #ef4444 !important; }
         .drag-over { border-top: 3px solid #ef4444 !important; }
-        .grab-handle { cursor: grab; }
     </style>
 </head>
 <body class="flex flex-col text-white">
@@ -101,7 +88,7 @@
         </div>
         
         <div class="flex items-center gap-3">
-            <span id="saveStatus" class="text-[10px] uppercase font-bold text-white/20">Synced</span>
+            <span id="saveStatus" class="text-[10px] uppercase font-bold text-white/20">Offline</span>
             <button id="settingsBtn" class="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-xs font-bold border border-white/5 uppercase tracking-widest text-white/80">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 Settings
@@ -117,48 +104,46 @@
             <div id="timerCard" class="glass-card p-4 lg:p-6 text-center shadow-2xl relative overflow-hidden border border-white/5">
                 <div id="nextLevelToast" class="absolute top-0 left-0 w-full bg-red-600/60 py-1 text-[10px] font-black tracking-widest uppercase hidden text-white text-center">Blinds Up!</div>
                 
-                <div class="flex justify-between items-center mb-2">
-                    <div class="text-white/40 font-bold uppercase tracking-widest text-[24px] leading-tight pt-3" id="levelLabel">Level 1</div>
+                <div class="flex justify-between items-start mb-2">
+                    <div class="text-white/40 font-bold uppercase tracking-widest text-2xl lg:text-3xl leading-tight pt-2" id="levelLabel">Level 1</div>
                     
                     <div class="bg-black/40 px-4 py-2 rounded-xl border border-white/10 flex flex-col items-center">
                         <span class="text-white/30 text-[12px] uppercase font-black tracking-widest leading-none mb-1 text-center">Next Break in</span>
-                        <!-- Color updated to white -->
-                        <span id="timeToBreakDisplay" class="text-white font-black text-[24px] font-mono leading-tight text-center">00:00:00</span>
+                        <span id="timeToBreakDisplay" class="text-white font-black text-2xl lg:text-3xl font-mono leading-tight text-center">00:00:00</span>
                     </div>
                 </div>
                 
-                <div id="timerDisplay" class="timer-font text-7xl lg:text-[10rem] leading-none mb-6 text-white/90">20:00</div>
+                <div id="timerDisplay" class="timer-font text-8xl lg:text-[11rem] leading-none mb-4 lg:mb-6 text-white/90">20:00</div>
                 
-                <div id="blindsContainer" class="flex flex-col gap-4 border-t border-white/5 pt-6">
+                <div id="blindsContainer" class="flex flex-col gap-4 border-t border-white/5 pt-6 lg:pt-8">
                     <div class="flex flex-col items-center text-white">
-                        <div id="mainBlindsDisplay" class="text-6xl lg:text-9xl font-black text-red-500 tracking-tighter flex items-center justify-center gap-4">
-                            <span id="sbDisplay">100</span>
-                            <span class="text-red-500 font-light">/</span>
-                            <span id="bbDisplay">200</span>
+                        <div id="mainBlindsDisplay" class="text-6xl lg:text-[8.5rem] font-black text-red-500 tracking-tighter flex items-center justify-center gap-4 lg:gap-8 leading-none">
+                            <span id="sbDisplay">50</span>
+                            <span class="text-red-500 font-light opacity-50">/</span>
+                            <span id="bbDisplay">50</span>
                         </div>
-                        <div id="anteContainer" class="mt-2 flex items-center gap-2 bg-black/40 px-4 py-1 rounded-full border border-white/10 hidden">
-                            <span class="text-[14px] font-black text-white/30 uppercase tracking-widest">Ante</span>
-                            <span id="anteDisplay" class="text-2xl font-black text-white/90 leading-none">50</span>
+                        <div id="anteContainer" class="mt-2 flex items-center gap-2 bg-black/40 px-5 py-1.5 rounded-full border border-white/10 hidden">
+                            <span class="text-base lg:text-xl font-black text-white/30 uppercase tracking-widest">Ante</span>
+                            <span id="anteDisplay" class="text-2xl lg:text-4xl font-black text-white/90 leading-none">0</span>
                         </div>
                     </div>
                     
                     <div class="bg-black/40 rounded-xl py-2 px-6 inline-flex self-center items-center gap-8 border border-white/10">
-                        <div class="flex items-center gap-3">
-                            <span class="text-[12px] font-black text-white/30 uppercase tracking-widest">Next:</span>
-                            <!-- Color updated to white -->
-                            <span id="blindsNextPreview" class="text-xl font-bold text-white">300 / 600</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs lg:text-sm font-black text-white/30 uppercase tracking-widest">Next:</span>
+                            <span id="blindsNextPreview" class="text-xl lg:text-2xl font-bold text-white">50 / 100</span>
                         </div>
                         <div class="w-px h-6 bg-white/10"></div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-[12px] font-black text-white/30 uppercase tracking-widest">Players:</span>
-                            <span id="playersMiniStat" class="text-xl font-bold text-white">0 / 0</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs lg:text-sm font-black text-white/30 uppercase tracking-widest">Players:</span>
+                            <span id="playersMiniStat" class="text-xl lg:text-2xl font-bold text-white">0 / 0</span>
                         </div>
                     </div>
                 </div>
 
-                <div id="breakIndicator" class="hidden flex flex-col items-center py-6 border-t border-white/5 text-white">
-                    <div class="text-4xl lg:text-5xl font-black text-blue-400 uppercase tracking-tighter pulse-blue" id="breakTitle">BREAK</div>
-                    <div id="breakMessage" class="text-sm font-bold text-white/50 text-center px-4"></div>
+                <div id="breakIndicator" class="hidden flex flex-col items-center py-10 border-t border-white/5 text-white">
+                    <div class="text-5xl lg:text-6xl font-black text-blue-400 uppercase tracking-tighter pulse-blue" id="breakTitle">BREAK</div>
+                    <div id="breakMessage" class="text-base font-bold text-white/50 text-center px-4 mt-1"></div>
                 </div>
             </div>
 
@@ -174,8 +159,7 @@
                     <span id="avgStackDisplay" class="text-2xl font-bold text-yellow-400">0</span>
                 </div>
                 <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
-                    <span class="text-white/30 text-[12px] uppercase font-black tracking-widest">Entries (B/R/A)</span>
-                    <!-- Color updated to white -->
+                    <span class="text-white/30 text-[12px] uppercase font-black tracking-widest text-white">Entries (B/R/A)</span>
                     <span id="braTotals" class="text-2xl font-bold text-white">0 / 0 / 0</span>
                 </div>
                 <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
@@ -189,7 +173,7 @@
                 <div class="glass-card p-5 flex flex-col border border-white/5">
                     <span class="text-white/30 text-[12px] uppercase font-black tracking-widest mb-2 text-left font-bold">Chip Values</span>
                     <div class="w-full h-px bg-white/10 mb-6"></div>
-                    <div id="chipDisplay" class="flex flex-wrap gap-4 justify-center items-center w-full"></div>
+                    <div id="chipDisplay" class="flex flex-wrap gap-5 justify-center items-center w-full py-2"></div>
                 </div>
                 <div class="glass-card p-5 flex flex-col border border-white/5">
                     <span class="text-white/30 text-[12px] uppercase font-black tracking-widest mb-2 text-left font-bold">Payout Structure</span>
@@ -249,7 +233,7 @@
             <div class="space-y-6">
                 <!-- Chips Editor -->
                 <div class="p-4 bg-black/40 rounded-xl border border-white/5">
-                    <label class="block text-white/40 text-[12px] font-black uppercase mb-4 tracking-tighter font-bold">Chips (Main Color / Stripe Color)</label>
+                    <label class="block text-white/40 text-[12px] font-black uppercase mb-4 tracking-tighter font-bold">Chips (Main / Segments / Inlay)</label>
                     <div id="chipEditorContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3 text-white"></div>
                     <button id="addChipBtn" class="w-full py-1.5 border border-dashed border-white/10 rounded-lg text-[10px] font-bold text-white/30 hover:text-white/60 text-white">+ Add Chip</button>
                 </div>
@@ -282,7 +266,7 @@
                     <div class="flex justify-between items-end mb-2">
                         <label class="text-white/40 text-[12px] font-black uppercase font-bold text-white">Structure (Drag & Drop)</label>
                         <div class="flex items-center gap-2 text-white">
-                            <span class="text-[10px] text-white/20 uppercase font-bold">Default Time (Min):</span>
+                            <span class="text-[10px] text-white/20 uppercase font-bold">Duration (Min):</span>
                             <input type="number" id="levelDurationInput" class="w-12 bg-black/20 p-1 rounded text-[10px] font-mono text-white" value="20">
                         </div>
                     </div>
@@ -297,10 +281,10 @@
                 <div class="p-4 bg-black/20 rounded-xl border border-white/5 text-white">
                     <div class="flex justify-between mb-2">
                         <label class="text-white/40 text-[12px] font-black uppercase font-bold text-white">Payout Split (%)</label>
-                        <span id="payoutTotalPercent" class="text-[10px] font-mono bg-white/10 px-2 rounded text-white font-bold">--%</span>
+                        <span id="payoutTotalPercent" class="text-[10px] font-mono bg-white/10 px-2 rounded text-white font-bold transition-all">--%</span>
                     </div>
                     <div id="payoutStructureContainer" class="space-y-1.5 mb-3 text-white"></div>
-                    <button id="addPayoutBtn" class="w-full py-1.5 border border-dashed border-white/10 rounded-lg text-[10px] font-bold text-white/30 hover:text-white/60 text-white">+ Rank</button>
+                    <button id="addPayoutBtn" class="w-full py-1.5 border border-dashed border-white/10 rounded-lg text-[10px] font-bold text-white/30 hover:text-white/60 text-white">+ Add Rank</button>
                 </div>
             </div>
 
@@ -309,104 +293,187 @@
     </div>
 
     <script>
-        // Firestore Setup
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-poker-timer';
-        let currentUser = null;
+        // Formatter
+        const fmtNum = (val) => Number(val).toLocaleString('de-DE');
 
-        // Reload protection
-        window.addEventListener('beforeunload', (e) => {
-            e.preventDefault();
-            e.returnValue = "Möchten Sie die Seite wirklich verlassen? Ungespeicherte Turnierfortschritte könnten verloren gehen.";
-        });
-
-        // Initial State
-        let state = {
+        // Defaults
+        const DEFAULT_STATE = {
             isRunning: false,
-            currentTime: 1200,
+            currentTime: 1200, 
             currentLevel: 0,
             levelDuration: 20, 
             totalTime: 0, 
-            buyInCost: 20, buyInChips: 10000,
+            buyInCost: 30, buyInChips: 10000,
             rebuyCost: 20, rebuyChips: 10000,
-            addOnCost: 10, addOnChips: 15000,
+            addOnCost: 30, addOnChips: 25000,
             poolDeduction: 0,
-            payouts: [50, 30, 20],
+            payouts: [35, 24, 16, 11, 8, 6],
             players: [],
             chipSet: [
-                { color: '#ffffff', stripeColor: '#000000', value: 100 },
-                { color: '#ef4444', stripeColor: '#ffffff', value: 500 },
-                { color: '#22c55e', stripeColor: '#ffffff', value: 1000 },
-                { color: '#3b82f6', stripeColor: '#ffffff', value: 5000 },
-                { color: '#000000', stripeColor: '#ef4444', value: 10000 }
+                { value: 25, color: '#49BE2D', stripeColor: '#283362', accentColor: '#2745DA' },
+                { value: 50, color: '#C78132', stripeColor: '#244439', accentColor: '#308331' },
+                { value: 100, color: '#202020', stripeColor: '#C36120', accentColor: '#AE9726' },
+                { value: 500, color: '#2057DA', stripeColor: '#51AAC7', accentColor: '#2E2651' },
+                { value: 1000, color: '#C7CA33', stripeColor: '#282C4F', accentColor: '#3C20A2' },
+                { value: 5000, color: '#BF27BA', stripeColor: '#41265D', accentColor: '#BEC82E' },
+                { value: 25000, color: '#25BDD0', stripeColor: '#2B2F54', accentColor: '#B023D7' }
             ],
             structure: [
+                { type: 'level', sb: 50, bb: 50, ante: 0, duration: 20 },
+                { type: 'level', sb: 50, bb: 100, ante: 0, duration: 20 },
                 { type: 'level', sb: 100, bb: 200, ante: 0, duration: 20 },
                 { type: 'level', sb: 200, bb: 400, ante: 0, duration: 20 },
-                { type: 'break', duration: 10, message: 'Chipraise 25s' },
-                { type: 'level', sb: 300, bb: 600, ante: 50, duration: 20 },
-                { type: 'level', sb: 400, bb: 800, ante: 100, duration: 20 },
-                { type: 'break', duration: 15, message: 'Dinner Break' },
-                { type: 'level', sb: 600, bb: 1200, ante: 200, duration: 20 },
-                { type: 'level', sb: 1000, bb: 2000, ante: 500, duration: 20 }
+                { type: 'level', sb: 300, bb: 600, ante: 0, duration: 20 },
+                { type: 'level', sb: 400, bb: 800, ante: 0, duration: 20 },
+                { type: 'break', duration: 15, message: 'Add-On Phase / Chipraise 50s' },
+                { type: 'level', sb: 500, bb: 1000, ante: 0, duration: 20 },
+                { type: 'level', sb: 700, bb: 1400, ante: 0, duration: 20 },
+                { type: 'level', sb: 1000, bb: 2000, ante: 0, duration: 20 },
+                { type: 'level', sb: 1500, bb: 3000, ante: 0, duration: 20 },
+                { type: 'level', sb: 2000, bb: 4000, ante: 0, duration: 20 },
+                { type: 'level', sb: 3000, bb: 6000, ante: 0, duration: 20 },
+                { type: 'break', duration: 15, message: 'Chipraise 100s' },
+                { type: 'level', sb: 4000, bb: 8000, ante: 0, duration: 20 },
+                { type: 'level', sb: 5000, bb: 10000, ante: 0, duration: 20 },
+                { type: 'level', sb: 7000, bb: 14000, ante: 0, duration: 20 },
+                { type: 'level', sb: 10000, bb: 20000, ante: 0, duration: 20 },
+                { type: 'level', sb: 15000, bb: 30000, ante: 0, duration: 20 },
+                { type: 'level', sb: 20000, bb: 40000, ante: 0, duration: 20 }
             ]
         };
 
+        let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        let db = null, auth = null, appId = 'poker-timer-app', currentUser = null;
+
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'poker-timer';
+            }
+        } catch (e) { console.warn("Firebase limited."); }
+
+        // DRAW CHIP FUNCTION (CANVAS PATHS)
+        function drawChip(canvas, chip) {
+            const ctx = canvas.getContext('2d');
+            const size = 160; 
+            canvas.width = size;
+            canvas.height = size;
+            
+            const cx = size / 2;
+            const cy = size / 2;
+            const rOuter = size / 2 - 2;
+            const rInner = rOuter - 14;
+            const spotWidthAngle = 35 * (Math.PI / 180); 
+            const accentWidthAngle = 12 * (Math.PI / 180); 
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+            ctx.fillStyle = chip.color;
+            ctx.fill();
+
+            for (let i = 0; i < 3; i++) {
+                const startAngle = (i * 120 - 90) * (Math.PI / 180) - spotWidthAngle / 2;
+                const endAngle = startAngle + spotWidthAngle;
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, rOuter, startAngle, endAngle, false); 
+                ctx.arc(cx, cy, rInner, endAngle, startAngle, true);  
+                ctx.closePath();
+                ctx.fillStyle = chip.stripeColor;
+                ctx.fill();
+
+                const aStart = startAngle + (spotWidthAngle - accentWidthAngle) / 2;
+                const aEnd = aStart + accentWidthAngle;
+                ctx.beginPath();
+                ctx.arc(cx, cy, rOuter, aStart, aEnd, false);
+                ctx.arc(cx, cy, rInner, aEnd, aStart, true);
+                ctx.closePath();
+                ctx.fillStyle = chip.accentColor;
+                ctx.fill();
+            }
+
+            ctx.fillStyle = 'white';
+            ctx.font = '900 32px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            const txt = chip.value >= 1000 ? (chip.value / 1000) + 'k' : chip.value;
+            ctx.fillText(txt, cx, cy);
+        }
+
+        function refreshAllChips() {
+            document.querySelectorAll('[data-chip-index]').forEach(wrapper => {
+                const idx = parseInt(wrapper.dataset.chipIndex);
+                const chip = state.chipSet[idx];
+                if (chip) {
+                    const canvas = document.createElement('canvas');
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    wrapper.innerHTML = '';
+                    wrapper.appendChild(canvas);
+                    drawChip(canvas, chip);
+                }
+            });
+        }
+
+        // Warn before reload or leaving if tournament is active
+        window.addEventListener('beforeunload', (e) => {
+            if (state.players.length > 0 || state.totalTime > 0 || state.isRunning) {
+                e.preventDefault();
+                const confirmMsg = "Tournament in progress. Do you really want to leave? Your inputs might be reset if not synced.";
+                e.returnValue = confirmMsg; 
+                return confirmMsg;
+            }
+        });
+
         async function initAuth() {
+            if (!auth) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await auth.signInWithCustomToken(__initial_auth_token);
-                } else {
-                    await auth.signInAnonymously();
-                }
-            } catch (error) {
-                console.error("Auth failed", error);
-            }
+                } else { await auth.signInAnonymously(); }
+            } catch (error) { console.error("Auth failed", error); }
         }
 
-        auth.onAuthStateChanged((user) => {
-            currentUser = user;
-            if (user) loadData();
-        });
+        if (auth) {
+            auth.onAuthStateChanged((user) => {
+                currentUser = user; if (user) loadData();
+            });
+        }
 
         async function saveData() {
-            if (!currentUser) return;
+            if (!db || !currentUser) return;
             const statusEl = document.getElementById('saveStatus');
             statusEl.textContent = "Saving...";
+            statusEl.classList.remove('text-white/20');
             statusEl.classList.add('text-yellow-400');
-            
             try {
                 const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
                 await docRef.set({ ...state, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() });
                 statusEl.textContent = "Synced";
-                statusEl.classList.replace('text-yellow-400', 'text-white/20');
-            } catch (err) {
-                statusEl.textContent = "Sync Error";
-                statusEl.classList.replace('text-yellow-400', 'text-red-500');
-            }
+                statusEl.classList.remove('text-yellow-400');
+                statusEl.classList.add('text-white/20');
+            } catch (err) { statusEl.textContent = "Error"; }
         }
 
         async function loadData() {
-            if (!currentUser) return;
+            if (!db || !currentUser) return;
             try {
                 const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
                 const doc = await docRef.get();
                 if (doc.exists) {
                     const saved = doc.data();
-                    state = { ...state, ...saved, isRunning: false }; // Never resume auto-play
-                    updateTimerUI();
-                    renderPlayers();
+                    state = { ...state, ...saved, isRunning: false }; 
+                    updateTimerUI(); renderPlayers();
                 }
-            } catch (err) {
-                console.error("Load failed", err);
-            }
+            } catch (err) { console.error("Load failed", err); }
         }
 
         let timerInterval = null;
-        let draggedIndex = null;
 
         function playBeep(freq, duration, vol) {
             try {
@@ -424,11 +491,8 @@
         const playAlarm = () => { playBeep(880, 0.4, 0.4); setTimeout(() => playBeep(880, 0.4, 0.4), 500); };
 
         const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${((s % 60)).toString().padStart(2, '0')}`;
-        
         const formatFullTime = (s) => {
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
-            const sec = s % 60;
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         };
 
@@ -442,51 +506,44 @@
             return state.structure.slice(state.currentLevel + 1).some(s => s.type === 'break') ? formatFullTime(totalSeconds) : "MAX";
         }
 
-        function getGrossMoney() {
-            return state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0);
-        }
-
         function calculateStats() {
-            const grossMoney = getGrossMoney();
+            const grossMoney = state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0);
             const netMoney = Math.max(0, grossMoney - state.poolDeduction);
             const totalChips = state.players.reduce((sum, p) => sum + (p.buyins * state.buyInChips) + (p.rebuys * state.rebuyChips) + (p.addons * state.addOnChips), 0);
             const activeCount = state.players.filter(p => p.status === 'active').length;
             const totalBuyins = state.players.reduce((s, p) => s + p.buyins, 0);
 
-            document.getElementById('prizePoolDisplay').textContent = `${netMoney} €`;
+            document.getElementById('prizePoolDisplay').textContent = `${fmtNum(netMoney)} €`;
             const deductionHint = document.getElementById('poolDeductionHint');
             if(state.poolDeduction > 0) {
-                deductionHint.textContent = `Total: ${grossMoney} € (-${state.poolDeduction} €)`;
+                deductionHint.textContent = `Total: ${fmtNum(grossMoney)} € (-${fmtNum(state.poolDeduction)} €)`;
                 deductionHint.classList.remove('hidden');
             } else deductionHint.classList.add('hidden');
 
-            document.getElementById('avgStackDisplay').textContent = activeCount > 0 ? Math.round(totalChips / activeCount).toLocaleString('de-DE') : '0';
+            document.getElementById('avgStackDisplay').textContent = activeCount > 0 ? fmtNum(Math.round(totalChips / activeCount)) : '0';
             document.getElementById('activePlayerCount').textContent = `${activeCount} / ${state.players.length}`;
-            const b = state.players.reduce((s,p)=>s+p.buyins,0), r = state.players.reduce((s,p)=>s+p.rebuys,0), a = state.players.reduce((s,p)=>s+p.addons,0);
-            document.getElementById('braTotals').textContent = `${b} / ${r} / ${a}`;
-            
+            document.getElementById('braTotals').textContent = `${state.players.reduce((s,p)=>s+p.buyins,0)} / ${state.players.reduce((s,p)=>s+p.rebuys,0)} / ${state.players.reduce((s,p)=>s+p.addons,0)}`;
             document.getElementById('playersMiniStat').textContent = `${activeCount} / ${totalBuyins}`;
             document.getElementById('totalTimeDisplay').textContent = formatFullTime(state.totalTime);
 
             document.getElementById('payoutList').innerHTML = state.payouts.map((percent, i) => `
                 <div class="flex-grow text-center p-1 bg-black/40 rounded-lg border border-white/5 min-w-[70px]">
                     <div class="text-[10px] opacity-30 font-black uppercase text-white/60 font-bold">Rank ${i+1} (${percent}%)</div>
-                    <div class="font-bold text-xs text-white">${Math.floor(netMoney * (percent / 100))} €</div>
+                    <div class="font-bold text-xs text-white">${fmtNum(Math.floor(netMoney * (percent / 100)))} €</div>
                 </div>
             `).join('');
             
             document.getElementById('timeToBreakDisplay').textContent = calculateTimeToBreak();
             
-            document.getElementById('chipDisplay').innerHTML = state.chipSet.map(c => `
-                <div class="poker-chip" style="background-color: ${c.color}; border-color: ${c.stripeColor};">
-                    <div class="poker-chip-inner text-white font-black">${c.value >= 1000 ? (c.value / 1000) + 'k' : c.value}</div>
-                </div>`).join('');
+            document.getElementById('chipDisplay').innerHTML = state.chipSet.map((c, i) => `
+                <div class="chip-canvas-wrapper" data-chip-index="${i}"></div>`).join('');
+            
+            refreshAllChips();
         }
 
         function renderPlayers() {
-            const active = state.players.filter(p => p.status === 'active');
-            const playerListEl = document.getElementById('playerList');
-            if (active.length === 0) playerListEl.innerHTML = '<p class="text-white/10 text-center text-[10px] py-10 italic">No active players</p>';
+            const active = state.players.filter(p => p.status === 'active'), playerListEl = document.getElementById('playerList');
+            if (active.length === 0) playerListEl.innerHTML = '<p class="text-white/10 text-center text-[10px] py-10 italic">No players</p>';
             else {
                 playerListEl.innerHTML = active.map(p => {
                     const pInvested = (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost);
@@ -496,46 +553,57 @@
                         <div class="flex-grow min-w-0 flex flex-col justify-center">
                             <h4 class="font-bold text-[12px] truncate uppercase tracking-tighter text-white/90 leading-tight">${p.name}</h4>
                             <div class="flex gap-2 text-[8px] font-bold text-white/20 uppercase">
-                                <span>R:${p.rebuys}</span> <span class="${addonLimitReached ? 'text-purple-400' : ''}">A:${p.addons}</span>
+                                <span class="${p.rebuys > 0 ? 'text-red-500 font-bold' : ''}">R:${p.rebuys}</span> <span class="${p.addons >= 1 ? 'text-purple-400 font-bold' : ''}">A:${p.addons}</span>
                             </div>
                         </div>
                         <div class="px-2 shrink-0">
-                            <div class="bg-green-500/10 text-green-400 px-2 py-1 rounded-lg border border-green-500/20 text-[14px] font-black leading-none font-bold">${pInvested} €</div>
+                            <div class="bg-green-500/10 text-green-400 px-2 py-1 rounded-lg border border-green-500/20 text-[14px] font-black leading-none font-bold">${fmtNum(pInvested)} €</div>
                         </div>
                         <div class="flex gap-0.5 items-center shrink-0">
                             <div class="flex border border-blue-500/20 rounded overflow-hidden">
-                                <button onclick="playerAction('${p.id}', 'remove-rebuy')" class="bg-blue-900/40 hover:bg-blue-900/60 text-white text-[10px] font-black px-1.5">-</button>
-                                <button onclick="playerAction('${p.id}', 'rebuy')" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black px-2 border-l border-blue-500/20 font-bold">RB</button>
+                                <button onclick="playerAction('${p.id}', 'remove-rebuy')" class="bg-blue-900/40 hover:bg-blue-900/60 text-white text-[10px] font-black px-2 py-1">-</button>
+                                <button onclick="playerAction('${p.id}', 'rebuy')" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-[9px] font-black px-3 py-1 border-l border-blue-500/20 font-bold">RB</button>
                             </div>
-                            <div class="flex border border-purple-500/20 rounded overflow-hidden">
-                                <button onclick="playerAction('${p.id}', 'remove-addon')" class="bg-purple-900/40 hover:bg-purple-900/60 text-white text-[10px] font-black px-1.5">-</button>
-                                <button onclick="playerAction('${p.id}', 'addon')" ${addonLimitReached ? 'disabled' : ''} class="bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 text-[9px] font-black px-2 border-l border-purple-500/20 font-bold ${addonLimitReached ? 'opacity-20 cursor-not-allowed' : ''}">AO</button>
+                            <div class="flex border border-purple-500/20 rounded overflow-hidden ml-0.5">
+                                <button onclick="playerAction('${p.id}', 'remove-addon')" class="bg-purple-900/40 hover:bg-purple-900/60 text-white text-[10px] font-black px-2 py-1">-</button>
+                                <button onclick="playerAction('${p.id}', 'addon')" ${addonLimitReached ? 'disabled' : ''} class="bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 text-[9px] font-black px-3 py-1 border-l border-purple-500/20 font-bold ${addonLimitReached ? 'opacity-20 cursor-not-allowed' : ''}">AO</button>
                             </div>
-                            <button onclick="playerAction('${p.id}', 'bust')" class="bg-red-600/20 hover:bg-red-600/40 text-red-500 text-[9px] font-black px-2 py-1 rounded border border-red-500/20 uppercase ml-1 font-bold">Bust</button>
+                            <button onclick="playerAction('${p.id}', 'bust')" class="bg-red-600/20 hover:bg-red-600/40 text-red-500 text-[9px] font-black px-3 py-1 rounded border border-red-500/20 uppercase ml-1 font-bold">Bust</button>
                         </div>
                     </div>`;
                 }).join('');
             }
-
-            const busted = state.players.filter(p => p.status === 'busted').sort((a,b) => b.bustOrder - a.bustOrder);
-            if (state.players.filter(p => p.status === 'active').length === 1) {
-                const winner = state.players.find(p => p.status === 'active');
-                if(winner) winner.finalRank = 1;
+            
+            // PRIZE LOGIC OVERHAUL
+            const netMoney = Math.max(0, (state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0)) - state.poolDeduction);
+            
+            // Collect all players with a final rank
+            const rankedPlayers = state.players.filter(p => p.finalRank > 0);
+            
+            // Special Case: Last Active player is Rank 1
+            const activePlayers = state.players.filter(p => p.status === 'active');
+            if (activePlayers.length === 1) {
+                const winner = activePlayers[0];
+                winner.finalRank = 1;
+                if (!rankedPlayers.includes(winner)) rankedPlayers.push(winner);
             }
 
-            const netMoney = Math.max(0, getGrossMoney() - state.poolDeduction);
-            document.getElementById('rankingList').innerHTML = busted.map((p) => {
-                const displayRank = p.finalRank || (state.players.length - p.bustOrder + 1);
-                const payoutPercent = state.payouts[displayRank - 1] || 0;
-                const prize = payoutPercent > 0 ? Math.floor(netMoney * (payoutPercent / 100)) : 0;
-                return `
-                <div class="flex items-center gap-1.5 p-1.5 bg-black/40 rounded-lg border border-white/5 ${prize > 0 ? 'border-yellow-500/30 shadow-inner shadow-yellow-900/10' : ''} text-white">
-                    <span class="font-mono text-white/30 text-[9px] w-5">#${displayRank}</span>
-                    <span class="flex-grow truncate font-semibold uppercase text-[10px] text-white/70 font-bold">${p.name}</span>
-                    ${prize > 0 ? `<span class="text-[10px] font-black text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 font-bold">${prize} €</span>` : ''}
-                    <button onclick="revivePlayer('${p.id}')" class="text-white/10 hover:text-white/50 ml-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-white"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
-                </div>`;
-            }).join('');
+            document.getElementById('rankingList').innerHTML = rankedPlayers
+                .sort((a,b) => a.finalRank - b.finalRank)
+                .map((p) => {
+                    const rank = p.finalRank;
+                    // Strict prize check: rank must be <= payouts length
+                    const payoutPercent = (rank > 0 && rank <= state.payouts.length) ? state.payouts[rank - 1] : 0;
+                    const prize = payoutPercent > 0 ? Math.floor(netMoney * (payoutPercent / 100)) : 0;
+                    
+                    return `
+                    <div class="flex items-center gap-1.5 p-1.5 bg-black/40 rounded-lg border border-white/5 ${prize > 0 ? 'border-yellow-500/30' : ''} text-white">
+                        <span class="font-mono text-white/30 text-[9px] w-5">#${rank}</span>
+                        <span class="flex-grow truncate font-semibold uppercase text-[10px] text-white/70 font-bold">${p.name}</span>
+                        ${prize > 0 ? `<span class="text-[10px] font-black text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 font-bold">${fmtNum(prize)} €</span>` : ''}
+                        <button onclick="revivePlayer('${p.id}')" class="text-white/10 hover:text-white/50 ml-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                    </div>`;
+                }).join('');
             calculateStats();
         }
 
@@ -545,101 +613,66 @@
             if (type === 'remove-rebuy' && p.rebuys > 0) p.rebuys--;
             if (type === 'addon' && p.addons < 1) p.addons++;
             if (type === 'remove-addon' && p.addons > 0) p.addons--;
+            
             if (type === 'bust') { 
                 const currentActive = state.players.filter(x => x.status === 'active').length;
-                p.status = 'busted'; p.bustOrder = state.players.filter(x => x.status === 'busted').length;
-                p.finalRank = currentActive;
+                p.status = 'busted'; 
+                // Rank logic: if 10 are active and I bust, I am Rank 10
+                p.finalRank = currentActive; 
             }
-            renderPlayers();
-            saveData();
+            renderPlayers(); saveData();
         };
 
-        window.revivePlayer = (id) => {
-            const p = state.players.find(x => x.id === id);
-            if (p) { p.status = 'active'; p.bustOrder = 0; p.finalRank = null; renderPlayers(); saveData(); }
+        window.revivePlayer = (id) => { 
+            const p = state.players.find(x => x.id === id); 
+            if (p) { 
+                p.status = 'active'; 
+                p.finalRank = 0; 
+                renderPlayers(); saveData(); 
+            } 
         };
 
         document.getElementById('addPlayerBtn').addEventListener('click', () => {
             const name = document.getElementById('playerNameInput').value.trim();
-            if (!name) return;
-            state.players.push({ id: Math.random().toString(36).substr(2, 9), name, status: 'active', buyins: 1, rebuys: 0, addons: 0, bustOrder: 0, finalRank: null });
-            document.getElementById('playerNameInput').value = ''; 
-            renderPlayers();
-            saveData();
+            if (name) { state.players.push({ id: Math.random().toString(36).substr(2, 9), name, status: 'active', buyins: 1, rebuys: 0, addons: 0, finalRank: 0 }); document.getElementById('playerNameInput').value = ''; renderPlayers(); saveData(); }
         });
 
         function updateTimerUI() {
-            const item = state.structure[state.currentLevel];
-            document.getElementById('timerDisplay').textContent = formatTime(state.currentTime);
-            const card = document.getElementById('timerCard');
-
+            const item = state.structure[state.currentLevel], timerDisp = document.getElementById('timerDisplay'), card = document.getElementById('timerCard');
+            timerDisp.textContent = formatTime(state.currentTime);
             if (item.type === 'break') {
-                document.getElementById('blindsContainer').classList.add('hidden');
-                document.getElementById('breakIndicator').classList.remove('hidden');
-                document.getElementById('levelLabel').textContent = `Break`;
-                document.getElementById('breakTitle').textContent = item.message ? "ACTION" : "BREAK";
-                document.getElementById('breakMessage').textContent = item.message || "Short break...";
-                card.style.borderColor = "rgba(96, 165, 250, 0.4)";
+                document.getElementById('blindsContainer').classList.add('hidden'); document.getElementById('breakIndicator').classList.remove('hidden');
+                document.getElementById('levelLabel').textContent = `Break`; document.getElementById('breakTitle').textContent = "BREAK";
+                document.getElementById('breakMessage').textContent = item.message; card.style.borderColor = "rgba(96, 165, 250, 0.4)";
             } else {
-                document.getElementById('blindsContainer').classList.remove('hidden');
-                document.getElementById('breakIndicator').classList.add('hidden');
-                document.getElementById('sbDisplay').textContent = item.sb;
-                document.getElementById('bbDisplay').textContent = item.bb;
-                const anteContainer = document.getElementById('anteContainer');
-                if (item.ante > 0) {
-                    anteContainer.classList.remove('hidden');
-                    document.getElementById('anteDisplay').textContent = item.ante;
-                } else anteContainer.classList.add('hidden');
+                document.getElementById('blindsContainer').classList.remove('hidden'); document.getElementById('breakIndicator').classList.add('hidden');
+                document.getElementById('sbDisplay').textContent = fmtNum(item.sb); document.getElementById('bbDisplay').textContent = fmtNum(item.bb);
+                document.getElementById('anteContainer').classList.toggle('hidden', item.ante === 0); document.getElementById('anteDisplay').textContent = fmtNum(item.ante);
                 let count = 0; for(let i=0; i<=state.currentLevel; i++) if(state.structure[i].type === 'level') count++;
-                document.getElementById('levelLabel').textContent = `Level ${count}`;
-                card.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                document.getElementById('levelLabel').textContent = `Level ${count}`; card.style.borderColor = "rgba(255, 255, 255, 0.1)";
             }
-            
-            let next = null; 
-            for(let i = state.currentLevel + 1; i < state.structure.length; i++) if (state.structure[i].type === 'level') { next = state.structure[i]; break; }
-            const nextPreviewEl = document.getElementById('blindsNextPreview');
-            if (next) {
-                nextPreviewEl.textContent = `${next.sb} / ${next.bb}${next.ante > 0 ? ' (A: '+next.ante+')' : ''}`;
-            } else nextPreviewEl.textContent = "MAXIMUM";
-
-            const timerDisp = document.getElementById('timerDisplay');
-            if (state.currentTime <= 10 && state.isRunning) timerDisp.classList.add('text-red-500', 'pulse-red');
-            else timerDisp.classList.remove('text-red-500', 'pulse-red');
+            let next = null; for(let i = state.currentLevel + 1; i < state.structure.length; i++) if (state.structure[i].type === 'level') { next = state.structure[i]; break; }
+            document.getElementById('blindsNextPreview').textContent = next ? `${fmtNum(next.sb)} / ${fmtNum(next.bb)}` : "MAXIMUM";
             calculateStats();
         }
 
         function toggleTimer() {
-            if (state.isRunning) {
-                clearInterval(timerInterval); state.isRunning = false;
-                document.getElementById('playIcon').classList.remove('hidden'); document.getElementById('pauseIcon').classList.add('hidden');
-            } else {
-                state.isRunning = true;
-                document.getElementById('playIcon').classList.add('hidden'); document.getElementById('pauseIcon').classList.remove('hidden');
-                timerInterval = setInterval(() => {
-                    if (state.currentTime > 0) {
-                        state.currentTime--;
-                        state.totalTime++;
-                        if (state.currentTime <= 5 && state.currentTime > 0) playTick();
-                        updateTimerUI();
-                        if (state.currentTime % 60 === 0) saveData(); // Auto-save every minute
-                    } else { 
-                        playAlarm(); 
-                        nextLevel(); 
-                        saveData();
-                    }
-                }, 1000);
+            if (state.isRunning) { clearInterval(timerInterval); state.isRunning = false; document.getElementById('playIcon').classList.remove('hidden'); document.getElementById('pauseIcon').classList.add('hidden');
+            } else { state.isRunning = true; document.getElementById('playIcon').classList.add('hidden'); document.getElementById('pauseIcon').classList.remove('hidden');
+                timerInterval = setInterval(() => { if (state.currentTime > 0) { state.currentTime--; state.totalTime++; if (state.currentTime <= 5) playTick(); updateTimerUI(); if (state.currentTime % 60 === 0) saveData(); } else { playAlarm(); nextLevel(); saveData(); } }, 1000);
             }
         }
 
-        function nextLevel() {
-            if (state.currentLevel < state.structure.length - 1) {
-                state.currentLevel++; const item = state.structure[state.currentLevel];
-                state.currentTime = (item.duration || item.type === 'break' ? item.duration : state.levelDuration) * 60;
-                updateTimerUI();
-            } else stopTimer();
-        }
+        function nextLevel() { if (state.currentLevel < state.structure.length - 1) { state.currentLevel++; const item = state.structure[state.currentLevel]; state.currentTime = (item.duration) * 60; updateTimerUI(); } else { clearInterval(timerInterval); state.isRunning = false; } }
 
-        function stopTimer() { clearInterval(timerInterval); state.isRunning = false; document.getElementById('playIcon').classList.remove('hidden'); document.getElementById('pauseIcon').classList.add('hidden'); }
+        function updatePayoutSum() {
+            const inputs = document.querySelectorAll('.payout-in');
+            let sum = 0;
+            inputs.forEach(input => sum += (parseInt(input.value) || 0));
+            const totalEl = document.getElementById('payoutTotalPercent');
+            totalEl.textContent = `${sum}%`;
+            if (sum === 100) { totalEl.className = "text-[10px] font-mono bg-green-500/20 text-green-400 px-2 rounded font-bold transition-all"; } else { totalEl.className = "text-[10px] font-mono bg-red-500/20 text-red-400 px-2 rounded font-bold transition-all"; }
+        }
 
         function renderChipEditor() {
             const cont = document.getElementById('chipEditorContainer');
@@ -648,167 +681,75 @@
                     <div class="flex gap-2 items-center">
                         <div class="flex flex-col gap-1 shrink-0">
                             <input type="color" value="${c.color}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer main-color-in" title="Main Color">
-                            <input type="color" value="${c.stripeColor}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer stripe-color-in" title="Stripe Color">
+                            <input type="color" value="${c.stripeColor}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer stripe-color-in" title="Segment Color">
+                            <input type="color" value="${c.accentColor}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer accent-color-in" title="Inlay Color">
                         </div>
+                        <div class="chip-canvas-wrapper !w-10 !h-10" data-chip-index="${i}"></div>
                         <input type="number" value="${c.value}" class="w-full bg-transparent text-[10px] p-0.5 chip-val-in font-mono text-white">
                         <button onclick="removeChip(${i})" class="text-white/20 hover:text-red-500">×</button>
                     </div>
                 </div>`).join('');
+            refreshAllChips();
         }
         window.removeChip = (i) => { state.chipSet.splice(i, 1); renderChipEditor(); };
-        document.getElementById('addChipBtn').addEventListener('click', () => { state.chipSet.push({color: '#ffffff', stripeColor: '#000000', value: 0}); renderChipEditor(); });
+        document.getElementById('addChipBtn').addEventListener('click', () => { state.chipSet.push({color: '#ffffff', stripeColor: '#000000', accentColor: '#ffffff', value: 0}); renderChipEditor(); });
 
         function renderPayoutSettings() {
-            const sum = state.payouts.reduce((a, b) => a + b, 0);
-            const total = document.getElementById('payoutTotalPercent');
-            total.textContent = `${sum}%`;
-            total.className = sum === 100 ? 'text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold' : 'text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold';
-            document.getElementById('payoutStructureContainer').innerHTML = state.payouts.map((p, i) => `
-                <div class="flex gap-2 items-center bg-black/40 p-1.5 rounded-lg border border-white/5 text-white">
-                    <span class="w-8 text-[8px] font-black opacity-30 text-white font-bold">${i+1}.</span>
-                    <input type="number" value="${p}" class="flex-grow bg-transparent text-[10px] payout-in font-mono text-white">%
-                    <button onclick="removePayout(${i})" class="text-white/20 hover:text-red-500">×</button>
-                </div>`).join('');
+            document.getElementById('payoutStructureContainer').innerHTML = state.payouts.map((p, i) => `<div class="flex gap-2 items-center bg-black/40 p-1.5 rounded-lg border border-white/5 text-white"><span class="w-8 text-[8px] font-black opacity-30 text-white font-bold">${i+1}.</span><input type="number" value="${p}" class="flex-grow bg-transparent text-[10px] payout-in font-mono text-white" oninput="updatePayoutSum()">%<button onclick="removePayout(${i})" class="text-white/20 hover:text-red-500">×</button></div>`).join('');
+            updatePayoutSum();
         }
         window.removePayout = (i) => { state.payouts.splice(i, 1); renderPayoutSettings(); };
-        document.getElementById('addPayoutBtn').addEventListener('click', () => { state.payouts.push(10); renderPayoutSettings(); });
-
-        window.handleDragStart = (e, index) => { draggedIndex = index; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
-        window.handleDragEnd = (e) => { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedIndex = null; };
-        window.handleDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); return false; };
-        window.handleDragLeave = (e) => { e.currentTarget.classList.remove('drag-over'); };
-        window.handleDrop = (e, index) => {
-            e.preventDefault();
-            if (draggedIndex !== null && draggedIndex !== index) {
-                const element = state.structure.splice(draggedIndex, 1)[0];
-                state.structure.splice(index, 0, element); renderStructureSettings();
-            }
-            return false;
-        };
+        document.getElementById('addPayoutBtn').addEventListener('click', () => { state.payouts.push(0); renderPayoutSettings(); });
 
         function renderStructureSettings() {
             let levelCount = 0;
-            const container = document.getElementById('structureContainer');
-            container.innerHTML = state.structure.map((l, i) => {
+            document.getElementById('structureContainer').innerHTML = state.structure.map((l, i) => {
                 if(l.type === 'level') levelCount++;
-                const isFirst = (i === 0); const isLast = (i === state.structure.length - 1);
-                const commonHeader = `
-                    <div class="flex flex-col gap-1 mr-1 shrink-0">
-                        <button onclick="moveItem(${i}, -1)" ${isFirst ? 'disabled' : 'class="text-white/30 hover:text-white"'}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
-                        </button>
-                        <button onclick="moveItem(${i}, 1)" ${isLast ? 'disabled' : 'class="text-white/30 hover:text-white"'}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
-                        </button>
-                    </div>`;
-
-                if (l.type === 'break') {
-                    return `
-                        <div draggable="true" ondragstart="handleDragStart(event, ${i})" ondragend="handleDragEnd(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, ${i})"
-                             class="flex flex-col gap-1 bg-blue-900/10 p-1.5 rounded-lg border border-blue-500/20 group relative text-white">
-                            <div class="flex gap-2 items-center">
-                                ${commonHeader}
-                                <span class="w-8 text-[8px] font-black text-blue-400 uppercase">P</span>
-                                <div class="flex gap-1 items-center bg-black/40 px-1 rounded">
-                                    <input type="number" value="${l.duration}" class="w-10 bg-transparent p-0.5 rounded text-[10px] dur-in font-mono text-white text-center">
-                                    <span class="text-[7px] opacity-30 font-bold uppercase">min</span>
-                                </div>
-                                <input type="text" value="${l.message || ''}" class="flex-grow bg-black/40 p-0.5 rounded text-[9px] msg-in text-white font-bold" placeholder="...">
-                                <button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button>
-                            </div>
-                        </div>`;
-                }
-                return `
-                    <div draggable="true" ondragstart="handleDragStart(event, ${i})" ondragend="handleDragEnd(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, ${i})"
-                         class="flex flex-col gap-1 bg-white/5 p-1.5 rounded-lg border border-white/5 group relative text-white">
-                        <div class="flex gap-2 items-center">
-                            ${commonHeader}
-                            <span class="w-6 text-[8px] font-black text-red-500 uppercase">L${levelCount}</span>
-                            <div class="flex gap-1 items-center bg-black/40 px-1 rounded border border-white/5">
-                                <input type="number" value="${l.duration || state.levelDuration}" class="w-8 bg-transparent text-[10px] dur-in font-mono text-white text-center">
-                                <span class="text-[7px] opacity-30 font-bold uppercase">min</span>
-                            </div>
-                            <input type="number" value="${l.sb}" class="w-full bg-black/30 p-0.5 rounded text-[10px] sb-in font-mono text-white text-center">
-                            <input type="number" value="${l.bb}" class="w-full bg-black/30 p-0.5 rounded text-[10px] bb-in font-mono text-white text-center">
-                            <input type="number" value="${l.ante}" class="w-full bg-black/30 p-0.5 rounded text-[10px] ante-in font-mono text-white text-center">
-                            <button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button>
-                        </div>
-                    </div>`;
+                const commonHeader = `<div class="flex flex-col gap-0.5 mr-1 shrink-0"><button onclick="moveItem(${i}, -1)" ${i === 0 ? 'disabled' : 'class="text-white/20 hover:text-white"'}><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button><button onclick="moveItem(${i}, 1)" ${i === state.structure.length - 1 ? 'disabled' : 'class="text-white/20 hover:text-white"'}><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button></div>`;
+                if (l.type === 'break') return `<div class="flex flex-col gap-1 bg-blue-900/10 p-1.5 rounded-lg border border-blue-500/20 group relative text-white"><div class="flex gap-2 items-center">${commonHeader}<span class="w-8 text-[8px] font-black text-blue-400 uppercase">P</span><div class="flex gap-1 items-center bg-black/40 px-1 rounded"><input type="number" value="${l.duration}" class="w-10 bg-transparent p-0.5 rounded text-[10px] dur-in font-mono text-white text-center"><span class="text-[7px] opacity-30 font-bold uppercase">min</span></div><input type="text" value="${l.message}" class="flex-grow bg-black/40 p-0.5 rounded text-[9px] msg-in text-white font-bold" placeholder="..."><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button></div></div>`;
+                return `<div class="flex flex-col gap-1 bg-white/5 p-1.5 rounded-lg border border-white/5 group relative text-white"><div class="flex gap-2 items-center">${commonHeader}<span class="w-6 text-[8px] font-black text-red-500 uppercase">L${levelCount}</span><div class="flex gap-1 items-center bg-black/40 px-1 rounded border border-white/5"><input type="number" value="${l.duration || state.levelDuration}" class="w-8 bg-transparent text-[10px] dur-in font-mono text-white text-center"><span class="text-[7px] opacity-30 font-bold uppercase">min</span></div><input type="number" value="${l.sb}" class="w-full bg-black/30 p-0.5 rounded text-[10px] sb-in font-mono text-center"><input type="number" value="${l.bb}" class="w-full bg-black/30 p-0.5 rounded text-[10px] bb-in font-mono text-center"><input type="number" value="${l.ante}" class="w-full bg-black/30 p-0.5 rounded text-[10px] ante-in font-mono text-center"><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button></div></div>`;
             }).join('');
         }
 
         window.removeLevel = (i) => { state.structure.splice(i, 1); renderStructureSettings(); };
-        window.moveItem = (index, direction) => {
-            const newIndex = index + direction; if (newIndex < 0 || newIndex >= state.structure.length) return;
-            const element = state.structure.splice(index, 1)[0]; state.structure.splice(newIndex, 0, element); renderStructureSettings();
-        };
-
-        document.getElementById('addLevelBtn').addEventListener('click', () => {
-            const last = state.structure.filter(s => s.type === 'level').pop() || {sb:100,bb:200,ante:0, duration: state.levelDuration};
-            state.structure.push({type: 'level', sb: last.sb*2, bb: last.bb*2, ante: last.ante, duration: last.duration}); renderStructureSettings();
-        });
-        document.getElementById('addBreakBtn').addEventListener('click', () => {
-            state.structure.push({type: 'break', duration: 10, message: ''}); renderStructureSettings();
-        });
+        window.moveItem = (idx, dir) => { const el = state.structure.splice(idx, 1)[0]; state.structure.splice(idx + dir, 0, el); renderStructureSettings(); };
+        document.getElementById('addLevelBtn').addEventListener('click', () => { state.structure.push({type: 'level', sb: 0, bb: 0, ante: 0, duration: 20}); renderStructureSettings(); });
+        document.getElementById('addBreakBtn').addEventListener('click', () => { state.structure.push({type: 'break', duration: 15, message: 'Break'}); renderStructureSettings(); });
 
         document.getElementById('settingsBtn').addEventListener('click', () => {
             document.getElementById('buyInCost').value = state.buyInCost; document.getElementById('buyInChips').value = state.buyInChips;
             document.getElementById('rebuyCost').value = state.rebuyCost; document.getElementById('rebuyChips').value = state.rebuyChips;
             document.getElementById('addOnCost').value = state.addOnCost; document.getElementById('addOnChips').value = state.addOnChips;
-            document.getElementById('poolDeduction').value = state.poolDeduction;
-            document.getElementById('levelDurationInput').value = state.levelDuration;
-            renderChipEditor(); renderPayoutSettings(); renderStructureSettings();
-            document.getElementById('settingsOverlay').classList.remove('hidden');
+            document.getElementById('poolDeduction').value = state.poolDeduction; document.getElementById('levelDurationInput').value = state.levelDuration;
+            renderChipEditor(); renderPayoutSettings(); renderStructureSettings(); document.getElementById('settingsOverlay').classList.remove('hidden');
         });
 
         document.getElementById('closeSettings').addEventListener('click', () => document.getElementById('settingsOverlay').classList.add('hidden'));
 
         document.getElementById('saveSettings').addEventListener('click', () => {
-            state.buyInCost = parseInt(document.getElementById('buyInCost').value) || 0;
-            state.buyInChips = parseInt(document.getElementById('buyInChips').value) || 0;
-            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value) || 0;
-            state.rebuyChips = parseInt(document.getElementById('rebuyChips').value) || 0;
-            state.addOnCost = parseInt(document.getElementById('addOnCost').value) || 0;
-            state.addOnChips = parseInt(document.getElementById('addOnChips').value) || 0;
-            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value) || 0;
-            state.levelDuration = parseInt(document.getElementById('levelDurationInput').value) || 20;
-
+            state.buyInCost = parseInt(document.getElementById('buyInCost').value); state.buyInChips = parseInt(document.getElementById('buyInChips').value);
+            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value); state.rebuyChips = parseInt(document.getElementById('rebuyChips').value);
+            state.addOnCost = parseInt(document.getElementById('addOnCost').value); state.addOnChips = parseInt(document.getElementById('addOnChips').value);
+            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value); state.levelDuration = parseInt(document.getElementById('levelDurationInput').value);
             state.chipSet = Array.from(document.querySelectorAll('#chipEditorContainer > div')).map(d => ({ 
                 color: d.querySelector('.main-color-in').value, 
                 stripeColor: d.querySelector('.stripe-color-in').value, 
-                value: parseInt(d.querySelector('.chip-val-in').value) || 0 
+                accentColor: d.querySelector('.accent-color-in').value,
+                value: parseInt(d.querySelector('.chip-val-in').value) 
             }));
-
-            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value) || 0);
-            const rows = document.querySelectorAll('#structureContainer > div');
-            const newStructure = Array.from(rows).map(r => {
-                const durInput = r.querySelector('.dur-in');
-                const msgInput = r.querySelector('.msg-in');
-                if (msgInput) return { type: 'break', duration: parseInt(durInput.value) || 5, message: msgInput.value };
-                return { type: 'level', sb: parseInt(r.querySelector('.sb-in').value) || 0, bb: parseInt(r.querySelector('.bb-in').value) || 0, ante: parseInt(r.querySelector('.ante-in').value) || 0, duration: parseInt(durInput.value) || state.levelDuration };
+            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value));
+            state.structure = Array.from(document.querySelectorAll('#structureContainer > div')).map(r => {
+                const dur = parseInt(r.querySelector('.dur-in').value), msg = r.querySelector('.msg-in');
+                return msg ? { type: 'break', duration: dur, message: msg.value } : { type: 'level', sb: parseInt(r.querySelector('.sb-in').value), bb: parseInt(r.querySelector('.bb-in').value), ante: parseInt(r.querySelector('.ante-in').value), duration: dur };
             });
-            
-            if (JSON.stringify(newStructure) !== JSON.stringify(state.structure)) {
-                state.structure = newStructure;
-                if(!state.isRunning && state.currentLevel === 0) {
-                    const first = state.structure[0];
-                    state.currentTime = (first.duration || first.type === 'break' ? first.duration : state.levelDuration) * 60;
-                }
-            }
-            updateTimerUI(); renderPlayers(); calculateStats(); saveData();
-            document.getElementById('settingsOverlay').classList.add('hidden');
+            updateTimerUI(); renderPlayers(); calculateStats(); saveData(); document.getElementById('settingsOverlay').classList.add('hidden');
         });
 
         document.getElementById('toggleBtn').addEventListener('click', toggleTimer);
         document.getElementById('nextBtn').addEventListener('click', nextLevel);
-        document.getElementById('prevBtn').addEventListener('click', () => { if (state.currentLevel > 0) { state.currentLevel--; const item = state.structure[state.currentLevel]; state.currentTime = (item.duration || item.type === 'break' ? item.duration : state.levelDuration) * 60; updateTimerUI(); saveData(); } });
+        document.getElementById('prevBtn').addEventListener('click', () => { if (state.currentLevel > 0) { state.currentLevel--; state.currentTime = state.structure[state.currentLevel].duration * 60; updateTimerUI(); saveData(); } });
 
-        // Initialize
-        window.onload = async () => {
-            await initAuth();
-            updateTimerUI(); 
-            renderPlayers();
-        };
+        window.onload = async () => { if (auth) await initAuth(); updateTimerUI(); renderPlayers(); };
     </script>
 </body>
 </html>
