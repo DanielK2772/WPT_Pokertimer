@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WPT Pokertimer - Tournament Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Compat Version for seamless integration) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -23,10 +23,12 @@
             color: white;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
         }
 
         .timer-font {
-            font-family: 'JetBrains+Mono', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.05em;
         }
@@ -79,7 +81,7 @@
         .drag-over { border-top: 3px solid #ef4444 !important; }
     </style>
 </head>
-<body class="flex flex-col text-white">
+<body class="flex flex-col">
 
     <!-- Header -->
     <header class="p-3 lg:p-4 flex justify-between items-center border-b border-white/10 bg-black/40">
@@ -88,7 +90,7 @@
         </div>
         
         <div class="flex items-center gap-3">
-            <span id="saveStatus" class="text-[10px] uppercase font-bold text-white/20">Offline</span>
+            <span id="saveStatus" class="text-[10px] uppercase font-bold text-white/20">Init...</span>
             <button id="settingsBtn" class="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-xs font-bold border border-white/5 uppercase tracking-widest text-white/80">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 Settings
@@ -293,6 +295,11 @@
     </div>
 
     <script>
+        // Global variables provided by the environment
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'poker-timer-app';
+        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
         // Formatter
         const fmtNum = (val) => Number(val).toLocaleString('de-DE');
 
@@ -325,14 +332,14 @@
                 { type: 'level', sb: 200, bb: 400, ante: 0, duration: 20 },
                 { type: 'level', sb: 300, bb: 600, ante: 0, duration: 20 },
                 { type: 'level', sb: 400, bb: 800, ante: 0, duration: 20 },
-                { type: 'break', duration: 15, message: 'Add-On Phase / Chipraise 50s' },
+                { type: 'break', duration: 15, message: 'Add-On Phase // Chipraise 50er' },
                 { type: 'level', sb: 500, bb: 1000, ante: 0, duration: 20 },
                 { type: 'level', sb: 700, bb: 1400, ante: 0, duration: 20 },
                 { type: 'level', sb: 1000, bb: 2000, ante: 0, duration: 20 },
                 { type: 'level', sb: 1500, bb: 3000, ante: 0, duration: 20 },
                 { type: 'level', sb: 2000, bb: 4000, ante: 0, duration: 20 },
                 { type: 'level', sb: 3000, bb: 6000, ante: 0, duration: 20 },
-                { type: 'break', duration: 15, message: 'Chipraise 100s' },
+                { type: 'break', duration: 15, message: 'Chipraise 100er' },
                 { type: 'level', sb: 4000, bb: 8000, ante: 0, duration: 20 },
                 { type: 'level', sb: 5000, bb: 10000, ante: 0, duration: 20 },
                 { type: 'level', sb: 7000, bb: 14000, ante: 0, duration: 20 },
@@ -343,19 +350,80 @@
         };
 
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        let db = null, auth = null, appId = 'poker-timer-app', currentUser = null;
+        let db = null, auth = null, currentUser = null;
 
-        try {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'poker-timer';
+        // Firebase Initialization
+        if (firebaseConfig) {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        }
+
+        async function initAuth() {
+            if (!auth) return;
+            try {
+                if (initialToken) {
+                    await auth.signInWithCustomToken(initialToken);
+                } else {
+                    await auth.signInAnonymously();
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
             }
-        } catch (e) { console.warn("Firebase limited."); }
+        }
 
-        // DRAW CHIP FUNCTION (CANVAS PATHS)
+        if (auth) {
+            auth.onAuthStateChanged(user => {
+                currentUser = user;
+                if (user) {
+                    document.getElementById('saveStatus').textContent = "Synced";
+                    loadData();
+                } else {
+                    document.getElementById('saveStatus').textContent = "Guest Mode";
+                }
+            });
+        }
+
+        // --- Firebase Data Ops (Rule 1 Compliant) ---
+        async function saveData() {
+            if (!db || !currentUser) return;
+            const statusEl = document.getElementById('saveStatus');
+            statusEl.textContent = "Saving...";
+            statusEl.classList.remove('text-white/20');
+            statusEl.classList.add('text-yellow-400');
+            try {
+                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
+                await docRef.set({ 
+                    ...state, 
+                    isRunning: false, 
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+                }, { merge: true });
+                statusEl.textContent = "Synced";
+                statusEl.classList.remove('text-yellow-400');
+                statusEl.classList.add('text-white/20');
+            } catch (err) { 
+                statusEl.textContent = "Error"; 
+                console.error(err);
+            }
+        }
+
+        async function loadData() {
+            if (!db || !currentUser) return;
+            try {
+                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const saved = doc.data();
+                    state = { ...state, ...saved, isRunning: false }; 
+                    updateTimerUI(); 
+                    renderPlayers();
+                }
+            } catch (err) { 
+                console.error("Load failed", err); 
+            }
+        }
+
+        // --- DRAW CHIP FUNCTION (CANVAS PATHS) ---
         function drawChip(canvas, chip) {
             const ctx = canvas.getContext('2d');
             const size = 160; 
@@ -420,59 +488,7 @@
             });
         }
 
-        // Warn before reload or leaving if tournament is active
-        window.addEventListener('beforeunload', (e) => {
-            if (state.players.length > 0 || state.totalTime > 0 || state.isRunning) {
-                e.preventDefault();
-                const confirmMsg = "Tournament in progress. Do you really want to leave? Your inputs might be reset if not synced.";
-                e.returnValue = confirmMsg; 
-                return confirmMsg;
-            }
-        });
-
-        async function initAuth() {
-            if (!auth) return;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
-                } else { await auth.signInAnonymously(); }
-            } catch (error) { console.error("Auth failed", error); }
-        }
-
-        if (auth) {
-            auth.onAuthStateChanged((user) => {
-                currentUser = user; if (user) loadData();
-            });
-        }
-
-        async function saveData() {
-            if (!db || !currentUser) return;
-            const statusEl = document.getElementById('saveStatus');
-            statusEl.textContent = "Saving...";
-            statusEl.classList.remove('text-white/20');
-            statusEl.classList.add('text-yellow-400');
-            try {
-                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
-                await docRef.set({ ...state, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() });
-                statusEl.textContent = "Synced";
-                statusEl.classList.remove('text-yellow-400');
-                statusEl.classList.add('text-white/20');
-            } catch (err) { statusEl.textContent = "Error"; }
-        }
-
-        async function loadData() {
-            if (!db || !currentUser) return;
-            try {
-                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
-                const doc = await docRef.get();
-                if (doc.exists) {
-                    const saved = doc.data();
-                    state = { ...state, ...saved, isRunning: false }; 
-                    updateTimerUI(); renderPlayers();
-                }
-            } catch (err) { console.error("Load failed", err); }
-        }
-
+        // Timer Logic
         let timerInterval = null;
 
         function playBeep(freq, duration, vol) {
@@ -574,25 +590,27 @@
                 }).join('');
             }
             
-            // PRIZE LOGIC OVERHAUL
+            // --- RANKING LOGIC ---
             const netMoney = Math.max(0, (state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0)) - state.poolDeduction);
             
-            // Collect all players with a final rank
-            const rankedPlayers = state.players.filter(p => p.finalRank > 0);
-            
-            // Special Case: Last Active player is Rank 1
+            // Start only with those who have a status of 'busted' and a rank assigned
+            const rankedPlayers = state.players.filter(p => p.status === 'busted' && p.finalRank > 0);
             const activePlayers = state.players.filter(p => p.status === 'active');
-            if (activePlayers.length === 1) {
+            
+            // A Winner (Rank 1) is ONLY determined if there is exactly 1 player left AND other players have already played/busted
+            if (activePlayers.length === 1 && state.players.length > 1) {
                 const winner = activePlayers[0];
                 winner.finalRank = 1;
-                if (!rankedPlayers.includes(winner)) rankedPlayers.push(winner);
+                // Avoid double adding if already in (though filter above excludes active players normally)
+                if (!rankedPlayers.some(p => p.id === winner.id)) {
+                    rankedPlayers.push(winner);
+                }
             }
 
             document.getElementById('rankingList').innerHTML = rankedPlayers
                 .sort((a,b) => a.finalRank - b.finalRank)
                 .map((p) => {
                     const rank = p.finalRank;
-                    // Strict prize check: rank must be <= payouts length
                     const payoutPercent = (rank > 0 && rank <= state.payouts.length) ? state.payouts[rank - 1] : 0;
                     const prize = payoutPercent > 0 ? Math.floor(netMoney * (payoutPercent / 100)) : 0;
                     
@@ -615,10 +633,9 @@
             if (type === 'remove-addon' && p.addons > 0) p.addons--;
             
             if (type === 'bust') { 
-                const currentActive = state.players.filter(x => x.status === 'active').length;
+                const currentActiveCount = state.players.filter(x => x.status === 'active').length;
                 p.status = 'busted'; 
-                // Rank logic: if 10 are active and I bust, I am Rank 10
-                p.finalRank = currentActive; 
+                p.finalRank = currentActiveCount; 
             }
             renderPlayers(); saveData();
         };
@@ -634,7 +651,11 @@
 
         document.getElementById('addPlayerBtn').addEventListener('click', () => {
             const name = document.getElementById('playerNameInput').value.trim();
-            if (name) { state.players.push({ id: Math.random().toString(36).substr(2, 9), name, status: 'active', buyins: 1, rebuys: 0, addons: 0, finalRank: 0 }); document.getElementById('playerNameInput').value = ''; renderPlayers(); saveData(); }
+            if (name) { 
+                state.players.push({ id: Math.random().toString(36).substr(2, 9), name, status: 'active', buyins: 1, rebuys: 0, addons: 0, finalRank: 0 }); 
+                document.getElementById('playerNameInput').value = ''; 
+                renderPlayers(); saveData(); 
+            }
         });
 
         function updateTimerUI() {
@@ -657,13 +678,41 @@
         }
 
         function toggleTimer() {
-            if (state.isRunning) { clearInterval(timerInterval); state.isRunning = false; document.getElementById('playIcon').classList.remove('hidden'); document.getElementById('pauseIcon').classList.add('hidden');
-            } else { state.isRunning = true; document.getElementById('playIcon').classList.add('hidden'); document.getElementById('pauseIcon').classList.remove('hidden');
-                timerInterval = setInterval(() => { if (state.currentTime > 0) { state.currentTime--; state.totalTime++; if (state.currentTime <= 5) playTick(); updateTimerUI(); if (state.currentTime % 60 === 0) saveData(); } else { playAlarm(); nextLevel(); saveData(); } }, 1000);
+            if (state.isRunning) { 
+                clearInterval(timerInterval); 
+                state.isRunning = false; 
+                document.getElementById('playIcon').classList.remove('hidden'); 
+                document.getElementById('pauseIcon').classList.add('hidden');
+            } else { 
+                state.isRunning = true; 
+                document.getElementById('playIcon').classList.add('hidden'); 
+                document.getElementById('pauseIcon').classList.remove('hidden');
+                timerInterval = setInterval(() => { 
+                    if (state.currentTime > 0) { 
+                        state.currentTime--; state.totalTime++; 
+                        if (state.currentTime <= 5) playTick(); 
+                        updateTimerUI(); 
+                        if (state.currentTime % 60 === 0) saveData(); 
+                    } else { 
+                        playAlarm(); 
+                        nextLevel(); 
+                        saveData(); 
+                    } 
+                }, 1000);
             }
         }
 
-        function nextLevel() { if (state.currentLevel < state.structure.length - 1) { state.currentLevel++; const item = state.structure[state.currentLevel]; state.currentTime = (item.duration) * 60; updateTimerUI(); } else { clearInterval(timerInterval); state.isRunning = false; } }
+        function nextLevel() { 
+            if (state.currentLevel < state.structure.length - 1) { 
+                state.currentLevel++; 
+                const item = state.structure[state.currentLevel]; 
+                state.currentTime = (item.duration) * 60; 
+                updateTimerUI(); 
+            } else { 
+                clearInterval(timerInterval); 
+                state.isRunning = false; 
+            } 
+        }
 
         function updatePayoutSum() {
             const inputs = document.querySelectorAll('.payout-in');
@@ -727,19 +776,21 @@
         document.getElementById('closeSettings').addEventListener('click', () => document.getElementById('settingsOverlay').classList.add('hidden'));
 
         document.getElementById('saveSettings').addEventListener('click', () => {
-            state.buyInCost = parseInt(document.getElementById('buyInCost').value); state.buyInChips = parseInt(document.getElementById('buyInChips').value);
-            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value); state.rebuyChips = parseInt(document.getElementById('rebuyChips').value);
-            state.addOnCost = parseInt(document.getElementById('addOnCost').value); state.addOnChips = parseInt(document.getElementById('addOnChips').value);
-            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value); state.levelDuration = parseInt(document.getElementById('levelDurationInput').value);
+            state.buyInCost = parseInt(document.getElementById('buyInCost').value) || 0; state.buyInChips = parseInt(document.getElementById('buyInChips').value) || 0;
+            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value) || 0; state.rebuyChips = parseInt(document.getElementById('rebuyChips').value) || 0;
+            state.addOnCost = parseInt(document.getElementById('addOnCost').value) || 0; state.addOnChips = parseInt(document.getElementById('addOnChips').value) || 0;
+            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value) || 0; state.levelDuration = parseInt(document.getElementById('levelDurationInput').value) || 20;
             state.chipSet = Array.from(document.querySelectorAll('#chipEditorContainer > div')).map(d => ({ 
                 color: d.querySelector('.main-color-in').value, 
                 stripeColor: d.querySelector('.stripe-color-in').value, 
                 accentColor: d.querySelector('.accent-color-in').value,
                 value: parseInt(d.querySelector('.chip-val-in').value) 
             }));
-            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value));
+            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value) || 0);
             state.structure = Array.from(document.querySelectorAll('#structureContainer > div')).map(r => {
-                const dur = parseInt(r.querySelector('.dur-in').value), msg = r.querySelector('.msg-in');
+                const durIn = r.querySelector('.dur-in');
+                const dur = durIn ? parseInt(durIn.value) : 20;
+                const msg = r.querySelector('.msg-in');
                 return msg ? { type: 'break', duration: dur, message: msg.value } : { type: 'level', sb: parseInt(r.querySelector('.sb-in').value), bb: parseInt(r.querySelector('.bb-in').value), ante: parseInt(r.querySelector('.ante-in').value), duration: dur };
             });
             updateTimerUI(); renderPlayers(); calculateStats(); saveData(); document.getElementById('settingsOverlay').classList.add('hidden');
@@ -749,7 +800,11 @@
         document.getElementById('nextBtn').addEventListener('click', nextLevel);
         document.getElementById('prevBtn').addEventListener('click', () => { if (state.currentLevel > 0) { state.currentLevel--; state.currentTime = state.structure[state.currentLevel].duration * 60; updateTimerUI(); saveData(); } });
 
-        window.onload = async () => { if (auth) await initAuth(); updateTimerUI(); renderPlayers(); };
+        window.onload = async () => { 
+            if (auth) await initAuth(); 
+            updateTimerUI(); 
+            renderPlayers(); 
+        };
     </script>
 </body>
 </html>
