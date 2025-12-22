@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WPT Pokertimer - Realtime Sync</title>
+    <title>WPT Pokertimer - Tournament Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Compat Version for seamless integration) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -43,51 +43,65 @@
             border-radius: 1rem;
         }
 
-        .pulse-red { animation: pulse 2s infinite; }
-        .pulse-blue { animation: pulse-blue 2s infinite; }
+        .player-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        @keyframes pulse-blue { 0%, 100% { color: #60a5fa; } 50% { color: #ffffff; } }
+        .pulse-red {
+            animation: pulse 2s infinite;
+        }
+
+        .pulse-blue {
+            animation: pulse-blue 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        @keyframes pulse-blue {
+            0%, 100% { color: #60a5fa; }
+            50% { color: #ffffff; }
+        }
 
         /* Scrollbar Styling */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
 
+        #playerList::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.4); }
+
         .chip-canvas-wrapper {
-            width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-    
-        .section-title {
-            color: #ffffff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+            width: 130px;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
+        .dragging { opacity: 0.5; border: 2px dashed #ef4444 !important; }
+        .drag-over { border-top: 3px solid #ef4444 !important; }
+    
+        .section-title {
+            color: #ffffff;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* Unify all numbers – Aptos-like */
         .font-mono {
             font-family: 'Source Sans 3', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
             font-variant-numeric: tabular-nums;
         }
     
         /* Settings UI helpers */
-        .settings-input { font-size: 18px; line-height: 1.2; }
-        .settings-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(239,68,68,0.35); }
-
-        /* Admin/Spectator Controls Visibility */
-        .admin-only { display: none !important; }
-        body.is-admin .admin-only { display: flex !important; }
-        body.is-admin .admin-only-block { display: block !important; }
-        body.is-admin .spectator-only { display: none !important; }
-        
-        /* Spectator Interface Adjustments */
-        body:not(.is-admin) .interactive-element {
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        /* Drag and Drop Styling */
-        .structure-row { cursor: grab; transition: transform 0.1s ease, box-shadow 0.1s ease; }
-        .structure-row:active { cursor: grabbing; }
-        .structure-row.dragging { opacity: 0.5; border: 2px dashed #ef4444 !important; transform: scale(0.98); }
-        .structure-row.drag-over { border-top: 3px solid #ef4444 !important; margin-top: 5px; }
+        #settingsOverlay .settings-input { font-size: 18px; line-height: 1.2; }
+        #settingsOverlay .settings-input::placeholder { color: rgba(255,255,255,0.35); }
+        #settingsOverlay .settings-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(239,68,68,0.35); }
+        #settingsOverlay .settings-pill { border: 1px solid rgba(255,255,255,0.10); }
 
     </style>
 </head>
@@ -99,8 +113,8 @@
             <h1 class="text-2xl font-black tracking-tighter uppercase">WPT <span class="text-red-500">Pokertimer</span></h1>
         </div>
         
-        <!-- Center Controls (Admin Only) -->
-        <div class="flex justify-center items-center gap-6 admin-only">
+        <!-- Center Controls -->
+        <div class="flex justify-center items-center gap-6">
             <button id="prevBtn" class="w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
             </button>
@@ -112,28 +126,12 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m13 17 5-5-5-5M6 17l5-5-5-5"/></svg>
             </button>
         </div>
-        <!-- Spectator Message -->
-        <div class="flex justify-center items-center spectator-only">
-            <span class="text-white/50 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Live View
-            </span>
-        </div>
 
         <div class="flex items-center gap-3 justify-end">
-            <span id="saveStatus" class="text-[14px] uppercase font-bold text-white/30 hidden lg:inline">Syncing...</span>
-            
-            <!-- Admin Settings Button -->
-            <button id="settingsBtn" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-[14px] font-bold border border-white/5 uppercase tracking-widest text-white/90 admin-only">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="saveStatus" class="text-[14px] uppercase font-bold text-white/30">Init...</span>
+            <button id="settingsBtn" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-[14px] font-bold border border-white/5 uppercase tracking-widest text-white/90">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 Settings
-            </button>
-
-            <!-- Login Button -->
-            <button id="loginBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-lg transition-all text-[14px] font-bold border border-blue-500/30 uppercase tracking-widest spectator-only">
-                Log In
-            </button>
-            <button id="logoutBtn" class="flex items-center gap-2 px-4 py-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 rounded-lg transition-all text-[14px] font-bold border border-red-500/30 uppercase tracking-widest admin-only">
-                Log Out
             </button>
         </div>
     </header>
@@ -166,11 +164,15 @@
                                 <span class="text-base lg:text-xl font-black text-white/30 uppercase tracking-widest">Ante</span>
                                 <span id="anteDisplay" class="text-2xl lg:text-4xl font-black font-mono text-white/90 leading-none">0</span>
                             </div>
+                            <!-- Next Blinds (small, subtle) -->
                             <div class="mt-3 flex flex-col items-center text-center">
                                 <span class="text-2xl lg:text-3xl font-bold text-red-400/70">Next:</span>
                                 <span id="blindsNextPreview" class="text-2xl lg:text-3xl font-bold font-mono text-red-400/70">50 / 100</span>
                             </div>
                         </div>
+                        
+                        
+                            
                     </div>
 
                     <div id="breakIndicator" class="hidden flex flex-col items-center py-10 border-t border-white/5 text-white">
@@ -185,37 +187,55 @@
 
                 <!-- Stats Bar -->
                 <div class="grid grid-cols-2 gap-3 text-white">
+                    <!-- 1. Prize Pool -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
-                        <span class="section-title">Prize Pool</span>
+                        
+                        <span class="section-title">Prize Pool (Net)</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="prizePoolDisplay" class="text-2xl font-bold font-mono text-green-400">0 €</span>
-                        <div id="poolDeductionHint" class="text-[14px] text-red-400 font-bold hidden"></div>
+                        <div id="poolDeductionHint" class="text-[14px] text-red-400 font-bold hidden">Total: 0 € (-0 € Expenses)
+                        </div>
                     </div>
+                    <!-- 2. Average Stack -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
-                        <span class="section-title">Avg Stack</span>
+                        
+                        <span class="section-title">Average Stack</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="avgStackDisplay" class="text-2xl font-bold font-mono text-yellow-400">0</span>
-                    </div>
+                    
+                        </div>
+                    <!-- 3. Players -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
+                        
                         <span class="section-title">Players</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="playersMiniStat" class="text-2xl font-bold font-mono text-white">0 / 0</span>
-                    </div>
+                    
+                        </div>
+                    <!-- 4. Entries -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
-                        <span class="section-title">Entries</span>
+                        
+                        <span class="section-title">Entries (B/R/A)</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="braTotals" class="text-2xl font-bold font-mono text-white">0 / 0 / 0</span>
-                    </div>
+                    
+                        </div>
+                    <!-- 5. Next Break In -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
-                        <span class="section-title">Next Break</span>
+                        
+                        <span class="section-title">Next Break In</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="nextBreakTile" class="text-2xl font-bold font-mono text-white">00:00:00</span>
-                    </div>
+                    
+                        </div>
+                    <!-- 6. Total Time -->
                     <div class="glass-card p-3 flex flex-col justify-center text-center border border-white/5">
+                        
                         <span class="section-title">Total Time</span>
                         <div class="w-full h-px bg-white/10 my-1"></div>
                         <span id="totalTimeDisplay" class="text-2xl font-bold font-mono text-white">00:00:00</span>
-                    </div>
+                    
+                        </div>
                 </div>
 
                 <!-- Chip Values -->
@@ -224,19 +244,21 @@
                     <div class="w-full h-px bg-white/10 mb-6"></div>
                     <div id="chipDisplay" class="flex flex-wrap gap-5 justify-center items-center w-full py-2"></div>
                 </div>
+
             </div>
         </div>
 
         <!-- BELOW MAIN: Payouts, Player Input, Active/Ranking -->
 
+        <!-- 1. Payout Structure (Full Width) -->
         <div class="glass-card p-5 flex flex-col border border-white/5">
             <span class="section-title mb-2 text-left font-bold">Payout Structure</span>
             <div class="w-full h-px bg-white/10 mb-6"></div>
             <div id="payoutList" class="flex flex-wrap gap-4 justify-center items-center w-full"></div>
         </div>
 
-        <!-- Player Input (Admin Only) -->
-        <div class="glass-card p-3 border border-white/5 admin-only">
+        <!-- 2. Player Input (Full Width) -->
+        <div class="glass-card p-3 border border-white/5">
             <div class="flex gap-2">
                 <input type="text" id="playerNameInput" placeholder="Player Name..." class="flex-grow bg-black/40 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-500 text-[14px] text-white">
                 <button id="addPlayerBtn" class="bg-red-600 hover:bg-red-500 p-1.5 rounded-lg transition-all shadow-md text-white">
@@ -245,7 +267,9 @@
             </div>
         </div>
 
+        <!-- 3 + 4: Active Players + Ranking (Half Width) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
             <div class="glass-card p-3 border border-white/5 flex flex-col min-h-[300px] max-h-[550px] overflow-hidden text-white">
                 <h3 class="section-title mb-2 flex justify-between shrink-0 font-bold">
                     Active Players <span id="activePlayerCount" class="text-white/60 font-mono">0 / 0</span>
@@ -257,38 +281,33 @@
                 <h3 class="section-title mb-2 shrink-0 font-bold">Ranking</h3>
                 <div id="rankingList" class="overflow-y-auto pr-1 space-y-1 text-white"></div>
             </div>
+
         </div>
 
     </div>
 
-    </main>
+</main>
 
-    <!-- PIN Modal -->
-    <div id="pinModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[60] flex items-center justify-center hidden">
-        <div class="glass-card p-8 border-white/10 shadow-2xl w-full max-w-sm text-center">
-            <h2 class="text-2xl font-black uppercase text-white mb-4">Admin Access</h2>
-            <input type="password" id="pinInput" class="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-center text-white text-2xl font-mono mb-4 focus:outline-none focus:border-red-500" placeholder="PIN" maxlength="4">
-            <div class="grid grid-cols-2 gap-3">
-                <button id="cancelPinBtn" class="py-3 rounded-xl font-bold text-white/50 hover:bg-white/5">Cancel</button>
-                <button id="confirmPinBtn" class="py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black text-white shadow-lg">Enter</button>
-            </div>
-        </div>
-    </div>
+    <!-- Controls -->
+    
 
-    <!-- Settings Modal (Admin Only content) -->
+    <!-- Settings Modal -->
     <div id="settingsOverlay" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center hidden p-6">
         <div class="glass-card w-full max-w-5xl p-10 max-h-[92vh] overflow-y-auto border-white/10 shadow-2xl text-lg">
+
             <div class="flex justify-between items-center mb-6 text-white">
                 <h2 class="text-2xl font-black uppercase tracking-widest">Settings</h2>
                 <button id="closeSettings" class="text-white/40 hover:text-white text-2xl font-black">×</button>
             </div>
+
             <div class="flex justify-center mb-6">
                 <button id="saveSettings" class="bg-red-600 hover:bg-red-500 px-10 py-3 rounded-2xl font-black text-[18px] shadow-xl uppercase tracking-widest text-white">Save & Apply</button>
             </div>
-            <!-- ... Settings UI Content ... -->
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 settings-scale">
-                 <!-- Economy -->
-                 <div class="glass-card p-6 border border-white/5 bg-black/40 lg:col-span-2">
+
+                <!-- Economy (Full Width) -->
+                <div class="glass-card p-6 border border-white/5 bg-black/40 lg:col-span-2">
                     <span class="section-title text-[18px] block mb-4">Finance</span>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-4 bg-black/30 rounded-xl border border-white/5">
@@ -298,6 +317,7 @@
                                 <div class="relative"><input type="number" id="buyInChips" class="settings-input w-full bg-black/40 border border-white/10 rounded-xl pr-16 px-4 py-3 text-white font-mono" placeholder="0"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">Chips</span></div>
                             </div>
                         </div>
+
                         <div class="p-4 bg-black/30 rounded-xl border border-white/5">
                             <label class="block section-title text-[16px] mb-2">Rebuy</label>
                             <div class="grid grid-cols-2 gap-3">
@@ -305,6 +325,7 @@
                                 <div class="relative"><input type="number" id="rebuyChips" class="settings-input w-full bg-black/40 border border-white/10 rounded-xl pr-16 px-4 py-3 text-white font-mono" placeholder="0"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">Chips</span></div>
                             </div>
                         </div>
+
                         <div class="p-4 bg-black/30 rounded-xl border border-white/5">
                             <label class="block section-title text-[16px] mb-2">Add-On</label>
                             <div class="grid grid-cols-2 gap-3">
@@ -312,6 +333,7 @@
                                 <div class="relative"><input type="number" id="addOnChips" class="settings-input w-full bg-black/40 border border-white/10 rounded-xl pr-16 px-4 py-3 text-white font-mono" placeholder="0"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">Chips</span></div>
                             </div>
                         </div>
+
                         <div class="p-4 bg-red-900/10 rounded-xl border border-red-500/20">
                             <label class="block section-title text-[16px] mb-2 text-red-200">Expenses</label>
                             <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-red-300 font-bold">€</span><input type="number" id="poolDeduction" class="settings-input w-full bg-black/40 border border-red-500/30 rounded-xl pl-8 pr-4 py-3 text-red-200 font-mono" placeholder="0"></div>
@@ -319,7 +341,7 @@
                     </div>
                 </div>
 
-                <!-- Payout Split -->
+                <!-- Payout Split (Half Width) -->
                 <div class="glass-card p-6 border border-white/5 bg-black/30">
                     <div class="flex items-center justify-between mb-4">
                         <span class="section-title text-[18px]">Payout Split</span>
@@ -329,16 +351,17 @@
                     <button id="addPayoutBtn" class="w-full py-3 border border-dashed border-white/15 rounded-xl text-[18px] font-bold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 transition">+ Add Rank</button>
                 </div>
 
-                <!-- Chips -->
+                <!-- Chips Visualization (Half Width) -->
                 <div class="glass-card p-6 border border-white/5 bg-black/40">
                     <div class="flex items-center justify-between mb-4">
                         <span class="section-title text-[18px]">Chips Visualization</span>
+                        <span class="text-white/40 text-[16px]">Main / Segments / Inlay</span>
                     </div>
                     <div id="chipEditorContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-white"></div>
                     <button id="addChipBtn" class="w-full py-3 border border-dashed border-white/15 rounded-xl text-[18px] font-bold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 transition">+ Add Chip</button>
                 </div>
 
-                <!-- Structure -->
+                <!-- Structure (Full Width) -->
                 <div class="glass-card p-6 border border-white/5 bg-black/40 lg:col-span-2">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                         <span class="section-title text-[18px]">Structure</span>
@@ -354,44 +377,26 @@
                     </div>
                 </div>
 
-                <!-- Security -->
-                <div class="glass-card p-6 border border-white/5 bg-black/40 lg:col-span-2">
-                    <span class="section-title text-[18px] block mb-4">Admin Security</span>
-                    <div class="flex items-center gap-3">
-                        <label class="text-white/70 font-bold">Admin PIN:</label>
-                        <input type="text" id="adminPinSetting" class="settings-input w-24 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-center" maxlength="4">
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Environment Config
+        // Global variables provided by the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'poker-timer-app';
         const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // Global State
-        let isAdmin = false;
-        let db = null, auth = null, currentUser = null;
-        let unsubscribeSnap = null;
-        let localTimerInt = null;
-        let displaySeconds = 0;
-        let displayTotalTime = 0;
-        let dragSrcEl = null; // for DnD
 
+        // Formatter
+        const fmtNum = (val) => Number(val).toLocaleString('de-DE');
+
+        // Defaults
         const DEFAULT_STATE = {
-            adminPin: "1234",
-            status: 'paused', 
-            endTime: 0,
-            secondsRemaining: 1200,
+            isRunning: false,
+            currentTime: 1200, 
             currentLevel: 0,
             levelDuration: 20, 
-            accumulatedTime: 0,
-            lastStartTime: null,
-            
-            // Economy & Players
+            totalTime: 0, 
             buyInCost: 30, buyInChips: 10000,
             rebuyCost: 20, rebuyChips: 10000,
             addOnCost: 30, addOnChips: 25000,
@@ -406,7 +411,6 @@
                 { value: 5000, color: '#BF27BA', stripeColor: '#41265D', accentColor: '#e4e708' },
                 { value: 25000, color: '#25BDD0', stripeColor: '#2B2F54', accentColor: '#B023D7' }
             ],
-            // RESTORED FULL STRUCTURE
             structure: [
                 { type: 'level', sb: 50, bb: 50, ante: 0, duration: 20 },
                 { type: 'level', sb: 50, bb: 100, ante: 0, duration: 20 },
@@ -432,18 +436,19 @@
         };
 
         let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        let db = null, auth = null, currentUser = null;
 
-        // Formatter
-        const fmtNum = (val) => Number(val).toLocaleString('de-DE');
-        const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${((s % 60)).toString().padStart(2, '0')}`;
-        const formatFullTime = (s) => {
-            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        };
+        // Prevent unexpected state overwrites after initial load
+        let __hasLoadedOnce = false;
 
-        // --- INIT ---
-        window.addEventListener('beforeunload', (e) => { e.preventDefault(); e.returnValue = ''; });
+        // Always confirm before leaving/reloading the page
+        window.addEventListener('beforeunload', (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
 
+        // Firebase Initialization
         if (firebaseConfig) {
             firebase.initializeApp(firebaseConfig);
             auth = firebase.auth();
@@ -453,180 +458,162 @@
         async function initAuth() {
             if (!auth) return;
             try {
-                if (initialToken) await auth.signInWithCustomToken(initialToken);
-                else await auth.signInAnonymously();
-            } catch (err) { console.error("Auth error:", err); }
+                if (initialToken) {
+                    await auth.signInWithCustomToken(initialToken);
+                } else {
+                    await auth.signInAnonymously();
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
+            }
         }
 
         if (auth) {
             auth.onAuthStateChanged(user => {
                 currentUser = user;
                 if (user) {
-                    setupRealtimeListener();
+                    document.getElementById('saveStatus').textContent = "Synced";
+                    if (!__hasLoadedOnce) {
+                        __hasLoadedOnce = true;
+                        loadData();
+                    }
                 } else {
-                    calculateStats(); // Guest fallback
+                    document.getElementById('saveStatus').textContent = "Guest Mode";
+                    // Render Chip Values + Payout Structure immediately in guest mode
+                    calculateStats();
                 }
             });
         }
 
-        function setupRealtimeListener() {
-            if (!db || !currentUser || unsubscribeSnap) return;
-            const docRef = db.doc(`artifacts/${appId}/public/data/gamestate/current`);
-            
-            unsubscribeSnap = docRef.onSnapshot((doc) => {
+        // --- Firebase Data Ops (Rule 1 Compliant) ---
+        async function saveData() {
+            if (!db || !currentUser) return;
+            const statusEl = document.getElementById('saveStatus');
+            statusEl.textContent = "Saving...";
+            statusEl.classList.remove('text-white/20');
+            statusEl.classList.add('text-yellow-400');
+            try {
+                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
+                await docRef.set({ 
+                    ...state, 
+                    isRunning: false, 
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp() 
+                }, { merge: true });
+                statusEl.textContent = "Synced";
+                statusEl.classList.remove('text-yellow-400');
+                statusEl.classList.add('text-white/20');
+            } catch (err) { 
+                statusEl.textContent = "Error"; 
+                console.error(err);
+            }
+        }
+
+        async function loadData() {
+            if (!db || !currentUser) return;
+            try {
+                const docRef = db.doc(`artifacts/${appId}/users/${currentUser.uid}/settings/current`);
+                const doc = await docRef.get();
                 if (doc.exists) {
-                    const data = doc.data();
-                    state = { ...DEFAULT_STATE, ...data }; 
-                    syncTimerLogic();
+                    const saved = doc.data();
+                    state = { ...state, ...saved, isRunning: false };
                     updateTimerUI();
                     renderPlayers();
+                    // Ensure Chip Values + Payout Structure render immediately after load
                     calculateStats();
-                    document.getElementById('saveStatus').textContent = "Live Sync";
                 } else {
-                    if (isAdmin) saveData(); 
+                    // No saved state yet – still render Chip Values + Payout Structure
+                    calculateStats();
                 }
-            }, (err) => console.error("Sync error", err));
+            } catch (err) {
+                console.error("Load failed", err);
+                // Even if load fails, render Chip Values + Payout Structure
+                calculateStats();
+            }
         }
 
-        // --- CORE SYNC LOGIC ---
-        function syncTimerLogic() {
-            if (localTimerInt) clearInterval(localTimerInt);
+        // --- DRAW CHIP FUNCTION (CANVAS PATHS) ---
+        function drawChip(canvas, chip) {
+            const ctx = canvas.getContext('2d');
+            const size = 170;
+            canvas.width = size;
+            canvas.height = size;
             
-            if (state.status === 'running') {
-                document.getElementById('playIcon').classList.add('hidden');
-                document.getElementById('pauseIcon').classList.remove('hidden');
-                
-                localTimerInt = setInterval(() => {
-                    const now = Date.now();
-                    const diff = Math.max(0, Math.ceil((state.endTime - now) / 1000));
-                    displaySeconds = diff;
-                    const currentSession = state.lastStartTime ? (now - state.lastStartTime) : 0;
-                    displayTotalTime = Math.floor((state.accumulatedTime + currentSession) / 1000);
-                    
-                    if (diff <= 0) {
-                        playAlarm();
-                        if (isAdmin) nextLevel(); 
-                        else clearInterval(localTimerInt); 
-                    } else if (diff <= 5) {
-                        playTick();
-                    }
-                    
-                    document.getElementById('timerDisplay').textContent = formatTime(displaySeconds);
-                    document.getElementById('totalTimeDisplay').textContent = formatFullTime(displayTotalTime);
-                    const nextBreakEl = document.getElementById('nextBreakTile');
-                    if (nextBreakEl) nextBreakEl.textContent = calculateTimeToBreak(displaySeconds);
+            const cx = size / 2;
+            const cy = size / 2;
+            const rOuter = size / 2 - 2;
+            const rInner = rOuter - 14;
+            const spotWidthAngle = 35 * (Math.PI / 180); 
+            const accentWidthAngle = 12 * (Math.PI / 180); 
 
-                }, 100); 
+            ctx.clearRect(0, 0, size, size);
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+            ctx.fillStyle = chip.color;
+            ctx.fill();
+
+            for (let i = 0; i < 3; i++) {
+                const startAngle = (i * 120 - 90) * (Math.PI / 180) - spotWidthAngle / 2;
+                const endAngle = startAngle + spotWidthAngle;
                 
-            } else {
-                document.getElementById('playIcon').classList.remove('hidden');
-                document.getElementById('pauseIcon').classList.add('hidden');
-                displaySeconds = state.secondsRemaining;
-                displayTotalTime = Math.floor(state.accumulatedTime / 1000);
-                
-                document.getElementById('timerDisplay').textContent = formatTime(displaySeconds);
-                document.getElementById('totalTimeDisplay').textContent = formatFullTime(displayTotalTime);
-                document.getElementById('nextBreakTile').textContent = calculateTimeToBreak(displaySeconds);
+                ctx.beginPath();
+                ctx.arc(cx, cy, rOuter, startAngle, endAngle, false); 
+                ctx.arc(cx, cy, rInner, endAngle, startAngle, true);  
+                ctx.closePath();
+                ctx.fillStyle = chip.stripeColor;
+                ctx.fill();
+
+                const aStart = startAngle + (spotWidthAngle - accentWidthAngle) / 2;
+                const aEnd = aStart + accentWidthAngle;
+                ctx.beginPath();
+                ctx.arc(cx, cy, rOuter, aStart, aEnd, false);
+                ctx.arc(cx, cy, rInner, aEnd, aStart, true);
+                ctx.closePath();
+                ctx.fillStyle = chip.accentColor;
+                ctx.fill();
             }
+
+            // Inner circle (same as stripeColor)
+            const innerCircleRadius = rInner - 14;
+            ctx.beginPath();
+            ctx.arc(cx, cy, innerCircleRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = chip.stripeColor;
+            ctx.lineWidth = 8
+            ctx.globalAlpha = 0.95;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Text style (reduced to fit inner circle)
+            ctx.shadowBlur = 3;
+            ctx.shadowColor = 'rgba(0,0,0,0.45)';
+            ctx.fillStyle = '#79050D';
+            ctx.font = '700 44px "Source Sans 3", "Inter", system-ui';
+            ctx.fontVariantNumeric = 'tabular-nums';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const txt = chip.value >= 1000 ? (chip.value / 1000) + 'K' : chip.value;
+            ctx.fillText(txt, cx, cy);
         }
 
-        async function saveData() {
-            if (!db || !isAdmin) return; 
-            const docRef = db.doc(`artifacts/${appId}/public/data/gamestate/current`);
-            try {
-                await docRef.set({ ...state }, { merge: true });
-            } catch (e) { console.error(e); }
-        }
-
-        // --- ACTIONS ---
-        function toggleTimer() {
-            if (!isAdmin) return;
-            const now = Date.now();
-            if (state.status === 'running') {
-                const elapsedInSession = now - state.lastStartTime;
-                state.accumulatedTime += elapsedInSession;
-                state.lastStartTime = null;
-                const remaining = Math.max(0, Math.ceil((state.endTime - now) / 1000));
-                state.secondsRemaining = remaining;
-                state.status = 'paused';
-                state.endTime = 0;
-            } else {
-                if (state.secondsRemaining <= 0) { nextLevel(); return; }
-                state.lastStartTime = now;
-                state.endTime = now + (state.secondsRemaining * 1000);
-                state.status = 'running';
-            }
-            saveData();
-        }
-
-        function nextLevel() {
-            if (!isAdmin) return;
-            if (state.status === 'running') {
-                const now = Date.now();
-                const elapsedInSession = now - state.lastStartTime;
-                state.accumulatedTime += elapsedInSession;
-                state.lastStartTime = now; 
-            }
-            if (state.currentLevel < state.structure.length - 1) {
-                state.currentLevel++;
-                const item = state.structure[state.currentLevel];
-                state.secondsRemaining = (item.duration || state.levelDuration) * 60;
-                if (state.status === 'running') {
-                    state.endTime = Date.now() + (state.secondsRemaining * 1000);
+        function refreshAllChips() {
+            document.querySelectorAll('[data-chip-index]').forEach(wrapper => {
+                const idx = parseInt(wrapper.dataset.chipIndex);
+                const chip = state.chipSet[idx];
+                if (chip) {
+                    const canvas = document.createElement('canvas');
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    wrapper.innerHTML = '';
+                    wrapper.appendChild(canvas);
+                    drawChip(canvas, chip);
                 }
-            } else {
-                state.status = 'paused';
-                state.lastStartTime = null;
-            }
-            saveData();
-        }
-        
-        function prevLevel() {
-            if (!isAdmin) return;
-            if (state.status === 'running') {
-                 const now = Date.now();
-                 state.accumulatedTime += (now - state.lastStartTime);
-                 state.lastStartTime = now;
-            }
-            if (state.currentLevel > 0) {
-                state.currentLevel--;
-                state.secondsRemaining = (state.structure[state.currentLevel].duration || state.levelDuration) * 60;
-                if (state.status === 'running') state.endTime = Date.now() + (state.secondsRemaining * 1000);
-                saveData();
-            }
+            });
         }
 
-        // --- AUTH & ADMIN UI ---
-        const pinModal = document.getElementById('pinModal');
-        const pinInput = document.getElementById('pinInput');
+        // Timer Logic
+        let timerInterval = null;
 
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            pinModal.classList.remove('hidden');
-            pinInput.value = '';
-            pinInput.focus();
-        });
-        
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            isAdmin = false;
-            document.body.classList.remove('is-admin');
-        });
-
-        document.getElementById('cancelPinBtn').addEventListener('click', () => pinModal.classList.add('hidden'));
-
-        document.getElementById('confirmPinBtn').addEventListener('click', () => {
-            if (pinInput.value === state.adminPin) { 
-                isAdmin = true;
-                document.body.classList.add('is-admin');
-                pinModal.classList.add('hidden');
-                saveData(); 
-            } else {
-                pinInput.classList.add('border-red-500');
-                pinInput.value = '';
-                setTimeout(() => pinInput.classList.remove('border-red-500'), 500);
-            }
-        });
-        
-        // --- SOUNDS ---
         function playBeep(freq, duration, vol) {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -642,42 +629,22 @@
         const playTick = () => playBeep(660, 0.1, 0.1);
         const playAlarm = () => { playBeep(880, 0.4, 0.4); setTimeout(() => playBeep(880, 0.4, 0.4), 500); };
 
-        // --- RENDERING ---
-        function updateTimerUI() {
-            const item = state.structure[state.currentLevel];
-            const card = document.getElementById('timerCard');
-            if (state.status !== 'running') {
-                document.getElementById('timerDisplay').textContent = formatTime(state.secondsRemaining);
+        const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${((s % 60)).toString().padStart(2, '0')}`;
+        const formatFullTime = (s) => {
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        };
+
+        function calculateTimeToBreak() {
+            let totalSeconds = state.currentTime;
+            for (let i = state.currentLevel + 1; i < state.structure.length; i++) {
+                if (state.structure[i].type === 'break') break;
+                totalSeconds += (state.structure[i].duration || state.levelDuration) * 60;
             }
-            if (item.type === 'break') {
-                document.getElementById('blindsContainer').classList.add('hidden'); 
-                document.getElementById('breakIndicator').classList.remove('hidden');
-                document.getElementById('levelLabel').textContent = `Break`; 
-                document.getElementById('breakTitle').textContent = "BREAK";
-                document.getElementById('breakMessage').textContent = item.message; 
-                card.style.borderColor = "rgba(96, 165, 250, 0.4)";
-            } else {
-                document.getElementById('blindsContainer').classList.remove('hidden'); 
-                document.getElementById('breakIndicator').classList.add('hidden');
-                document.getElementById('sbDisplay').textContent = fmtNum(item.sb); 
-                document.getElementById('bbDisplay').textContent = fmtNum(item.bb);
-                document.getElementById('anteContainer').classList.toggle('hidden', item.ante === 0); 
-                document.getElementById('anteDisplay').textContent = fmtNum(item.ante);
-                
-                let count = 0; 
-                for(let i=0; i<=state.currentLevel; i++) if(state.structure[i].type === 'level') count++;
-                document.getElementById('levelLabel').textContent = `Level ${count}`; 
-                card.style.borderColor = "rgba(255, 255, 255, 0.1)";
-            }
-            let next = null; 
-            for(let i = state.currentLevel + 1; i < state.structure.length; i++) {
-                if (state.structure[i].type === 'level') { next = state.structure[i]; break; }
-            }
-            const nextEl = document.getElementById('blindsNextPreview');
-            if (nextEl) nextEl.textContent = next ? `${fmtNum(next.sb)} / ${fmtNum(next.bb)}` : "MAXIMUM";
+            if (state.structure[state.currentLevel].type === 'break') return "Active";
+            return state.structure.slice(state.currentLevel + 1).some(s => s.type === 'break') ? formatFullTime(totalSeconds) : "-";
         }
 
-        // --- PLAYERS & STATS --- 
         function calculateStats() {
             const grossMoney = state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0);
             const netMoney = Math.max(0, grossMoney - state.poolDeduction);
@@ -694,9 +661,10 @@
 
             document.getElementById('avgStackDisplay').textContent = activeCount > 0 ? fmtNum(Math.round(totalChips / activeCount)) : '0';
             document.getElementById('activePlayerCount').textContent = `${activeCount} / ${state.players.length}`;
-            document.getElementById('braTotals').textContent = `${totalBuyins} / ${state.players.reduce((s,p)=>s+p.rebuys,0)} / ${state.players.reduce((s,p)=>s+p.addons,0)}`;
+            document.getElementById('braTotals').textContent = `${state.players.reduce((s,p)=>s+p.buyins,0)} / ${state.players.reduce((s,p)=>s+p.rebuys,0)} / ${state.players.reduce((s,p)=>s+p.addons,0)}`;
             document.getElementById('playersMiniStat').textContent = `${activeCount} / ${totalBuyins}`;
-            
+            document.getElementById('totalTimeDisplay').textContent = formatFullTime(state.totalTime);
+
             document.getElementById('payoutList').innerHTML = state.payouts.map((percent, i) => `
                 <div class="flex-grow text-center p-4 bg-black/40 rounded-xl border border-white/10 min-w-[140px]">
                     <div class="text-2xl font-black font-mono text-white">Rank ${i+1}</div>
@@ -704,28 +672,20 @@
                 </div>
             `).join('');
             
+            const nbEl = document.getElementById('nextBreakTile');
+            if (nbEl) nbEl.textContent = calculateTimeToBreak();
+            
             document.getElementById('chipDisplay').innerHTML = state.chipSet.map((c, i) => `
                 <div class="chip-canvas-wrapper" data-chip-index="${i}"></div>`).join('');
             
             refreshAllChips();
         }
 
-        function calculateTimeToBreak(currentSeconds) {
-            let totalSeconds = currentSeconds;
-            for (let i = state.currentLevel + 1; i < state.structure.length; i++) {
-                if (state.structure[i].type === 'break') break;
-                totalSeconds += (state.structure[i].duration || state.levelDuration) * 60;
-            }
-            if (state.structure[state.currentLevel].type === 'break') return "Active";
-            return state.structure.slice(state.currentLevel + 1).some(s => s.type === 'break') ? formatFullTime(totalSeconds) : "-";
-        }
-
         function renderPlayers() {
-            const active = state.players.filter(p => p.status === 'active');
-            const list = document.getElementById('playerList');
-            if (active.length === 0) list.innerHTML = '<p class="text-white/10 text-center text-[14px] py-10 italic">No players</p>';
+            const active = state.players.filter(p => p.status === 'active'), playerListEl = document.getElementById('playerList');
+            if (active.length === 0) playerListEl.innerHTML = '<p class="text-white/10 text-center text-[14px] py-10 italic">No players</p>';
             else {
-                list.innerHTML = active.map(p => {
+                playerListEl.innerHTML = active.map(p => {
                     const pInvested = (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost);
                     const addonLimitReached = p.addons >= 1;
                     return `
@@ -739,7 +699,7 @@
                         <div class="px-2 shrink-0">
                             <div class="bg-green-500/10 text-green-400 px-2 py-1 rounded-lg border border-green-500/20 text-[14px] font-black font-mono leading-none">${fmtNum(pInvested)} €</div>
                         </div>
-                        <div class="flex gap-0.5 items-center shrink-0 admin-only">
+                        <div class="flex gap-0.5 items-center shrink-0">
                             <div class="flex border border-blue-500/20 rounded overflow-hidden">
                                 <button onclick="playerAction('${p.id}', 'remove-rebuy')" class="bg-blue-900/40 hover:bg-blue-900/60 text-white text-[14px] font-black px-2 py-1">-</button>
                                 <button onclick="playerAction('${p.id}', 'rebuy')" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 text-[11px] font-black px-3 py-1 border-l border-blue-500/20 font-bold">RB</button>
@@ -753,18 +713,22 @@
                     </div>`;
                 }).join('');
             }
-            renderRanking();
-        }
-
-        function renderRanking() {
+            
+            // --- RANKING LOGIC ---
             const netMoney = Math.max(0, (state.players.reduce((sum, p) => sum + (p.buyins * state.buyInCost) + (p.rebuys * state.rebuyCost) + (p.addons * state.addOnCost), 0)) - state.poolDeduction);
+            
+            // Start only with those who have a status of 'busted' and a rank assigned
             const rankedPlayers = state.players.filter(p => p.status === 'busted' && p.finalRank > 0);
             const activePlayers = state.players.filter(p => p.status === 'active');
-
+            
+            // A Winner (Rank 1) is ONLY determined if there is exactly 1 player left AND other players have already played/busted
             if (activePlayers.length === 1 && state.players.length > 1) {
                 const winner = activePlayers[0];
                 winner.finalRank = 1;
-                if (!rankedPlayers.some(p => p.id === winner.id)) rankedPlayers.push(winner);
+                // Avoid double adding if already in (though filter above excludes active players normally)
+                if (!rankedPlayers.some(p => p.id === winner.id)) {
+                    rankedPlayers.push(winner);
+                }
             }
 
             document.getElementById('rankingList').innerHTML = rankedPlayers
@@ -773,97 +737,127 @@
                     const rank = p.finalRank;
                     const payoutPercent = (rank > 0 && rank <= state.payouts.length) ? state.payouts[rank - 1] : 0;
                     const prize = payoutPercent > 0 ? Math.floor(netMoney * (payoutPercent / 100)) : 0;
+                    
                     return `
                     <div class="flex items-center gap-1.5 p-1.5 bg-black/40 rounded-lg border border-white/5 ${prize > 0 ? 'border-yellow-500/30' : ''} text-white">
                         <span class="font-mono text-white/30 text-[11px] w-5">#${rank}</span>
                         <span class="flex-grow truncate font-semibold uppercase text-[14px] text-white/70 font-bold">${p.name}</span>
                         ${prize > 0 ? `<span class="text-[14px] font-black font-mono text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">${fmtNum(prize)} €</span>` : ''}
-                        <button onclick="revivePlayer('${p.id}')" class="text-white/10 hover:text-white/50 ml-0.5 admin-only"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+                        <button onclick="revivePlayer('${p.id}')" class="text-white/10 hover:text-white/50 ml-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
                     </div>`;
                 }).join('');
+            calculateStats();
         }
 
         window.playerAction = (id, type) => {
-            if (!isAdmin) return;
             const p = state.players.find(x => x.id === id); if (!p) return;
             if (type === 'rebuy') p.rebuys++; 
             if (type === 'remove-rebuy' && p.rebuys > 0) p.rebuys--;
             if (type === 'addon' && p.addons < 1) p.addons++;
             if (type === 'remove-addon' && p.addons > 0) p.addons--;
+            
             if (type === 'bust') { 
                 const currentActiveCount = state.players.filter(x => x.status === 'active').length;
-                p.status = 'busted'; p.finalRank = currentActiveCount; 
+                p.status = 'busted'; 
+                p.finalRank = currentActiveCount; 
             }
-            saveData();
+            renderPlayers(); saveData();
         };
 
         window.revivePlayer = (id) => { 
-            if (!isAdmin) return;
             const p = state.players.find(x => x.id === id); 
-            if (p) { p.status = 'active'; p.finalRank = 0; saveData(); } 
+            if (p) { 
+                p.status = 'active'; 
+                p.finalRank = 0; 
+                renderPlayers(); saveData(); 
+            } 
         };
 
         document.getElementById('addPlayerBtn').addEventListener('click', () => {
-            if (!isAdmin) return;
             const name = document.getElementById('playerNameInput').value.trim();
             if (name) { 
                 state.players.push({ id: Math.random().toString(36).substr(2, 9), name, status: 'active', buyins: 1, rebuys: 0, addons: 0, finalRank: 0 }); 
                 document.getElementById('playerNameInput').value = ''; 
-                saveData(); 
+                renderPlayers(); saveData(); 
             }
         });
 
-        // --- CHIPS DRAWING (Visuals) ---
-        function drawChip(canvas, chip) {
-            const ctx = canvas.getContext('2d');
-            const size = 170; canvas.width = size; canvas.height = size;
-            const cx = size/2, cy = size/2, rOuter = size/2 - 2, rInner = rOuter - 14;
-            ctx.clearRect(0, 0, size, size);
-            ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI * 2); ctx.fillStyle = chip.color; ctx.fill();
-            for (let i = 0; i < 3; i++) {
-                const start = (i * 120 - 90) * (Math.PI / 180) - 0.61;
-                ctx.beginPath(); ctx.arc(cx, cy, rOuter, start, start + 0.61, false); ctx.arc(cx, cy, rInner, start + 0.61, start, true); ctx.closePath();
-                ctx.fillStyle = chip.stripeColor; ctx.fill();
-                const aStart = start + (0.61 - 0.21) / 2;
-                ctx.beginPath(); ctx.arc(cx, cy, rOuter, aStart, aStart + 0.21, false); ctx.arc(cx, cy, rInner, aStart + 0.21, aStart, true); ctx.closePath();
-                ctx.fillStyle = chip.accentColor; ctx.fill();
+        function updateTimerUI() {
+            const item = state.structure[state.currentLevel], timerDisp = document.getElementById('timerDisplay'), card = document.getElementById('timerCard');
+            timerDisp.textContent = formatTime(state.currentTime);
+            if (item.type === 'break') {
+                document.getElementById('blindsContainer').classList.add('hidden'); document.getElementById('breakIndicator').classList.remove('hidden');
+                document.getElementById('levelLabel').textContent = `Break`; document.getElementById('breakTitle').textContent = "BREAK";
+                document.getElementById('breakMessage').textContent = item.message; card.style.borderColor = "rgba(96, 165, 250, 0.4)";
+            } else {
+                document.getElementById('blindsContainer').classList.remove('hidden'); document.getElementById('breakIndicator').classList.add('hidden');
+                document.getElementById('sbDisplay').textContent = fmtNum(item.sb); document.getElementById('bbDisplay').textContent = fmtNum(item.bb);
+                document.getElementById('anteContainer').classList.toggle('hidden', item.ante === 0); document.getElementById('anteDisplay').textContent = fmtNum(item.ante);
+                let count = 0; for(let i=0; i<=state.currentLevel; i++) if(state.structure[i].type === 'level') count++;
+                document.getElementById('levelLabel').textContent = `Level ${count}`; card.style.borderColor = "rgba(255, 255, 255, 0.1)";
             }
-            ctx.beginPath(); ctx.arc(cx, cy, rInner - 14, 0, Math.PI * 2); ctx.strokeStyle = chip.stripeColor; ctx.lineWidth = 8; ctx.globalAlpha = 0.95; ctx.stroke(); ctx.globalAlpha = 1;
-            ctx.shadowBlur = 3; ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.fillStyle = '#79050D';
-            ctx.font = '700 44px "Source Sans 3", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(chip.value >= 1000 ? (chip.value / 1000) + 'K' : chip.value, cx, cy);
+            let next = null; for(let i = state.currentLevel + 1; i < state.structure.length; i++) if (state.structure[i].type === 'level') { next = state.structure[i]; break; }
+            const nextEl = document.getElementById('blindsNextPreview');
+            if (nextEl) nextEl.textContent = next ? `${fmtNum(next.sb)} / ${fmtNum(next.bb)}` : "MAXIMUM";
+            calculateStats();
         }
 
-        function refreshAllChips() {
-            document.querySelectorAll('[data-chip-index]').forEach(wrapper => {
-                const idx = parseInt(wrapper.dataset.chipIndex);
-                const chip = state.chipSet[idx];
-                if (chip) {
-                    wrapper.innerHTML = '';
-                    const canvas = document.createElement('canvas');
-                    canvas.style.width = '100%'; canvas.style.height = '100%';
-                    wrapper.appendChild(canvas); drawChip(canvas, chip);
-                }
-            });
+        function toggleTimer() {
+            if (state.isRunning) { 
+                clearInterval(timerInterval); 
+                state.isRunning = false; 
+                document.getElementById('playIcon').classList.remove('hidden'); 
+                document.getElementById('pauseIcon').classList.add('hidden');
+            } else { 
+                state.isRunning = true; 
+                document.getElementById('playIcon').classList.add('hidden'); 
+                document.getElementById('pauseIcon').classList.remove('hidden');
+                timerInterval = setInterval(() => { 
+                    if (state.currentTime > 0) { 
+                        state.currentTime--; state.totalTime++; 
+                        if (state.currentTime <= 5) playTick(); 
+                        updateTimerUI(); 
+                        if (state.currentTime % 60 === 0) saveData(); 
+                    } else { 
+                        playAlarm(); 
+                        nextLevel(); 
+                        saveData(); 
+                    } 
+                }, 1000);
+            }
         }
 
-        // --- SETTINGS LOGIC ---
+        function nextLevel() { 
+            if (state.currentLevel < state.structure.length - 1) { 
+                state.currentLevel++; 
+                const item = state.structure[state.currentLevel]; 
+                state.currentTime = ((item.duration || state.levelDuration) * 60); 
+                updateTimerUI(); 
+            } else { 
+                clearInterval(timerInterval); 
+                state.isRunning = false; 
+            } 
+        }
+
         function updatePayoutSum() {
             const inputs = document.querySelectorAll('.payout-in');
             let sum = 0;
             inputs.forEach(input => sum += (parseInt(input.value) || 0));
             const totalEl = document.getElementById('payoutTotalPercent');
             totalEl.textContent = `${sum}%`;
-            totalEl.className = sum === 100 
-                ? "settings-pill text-[18px] font-mono bg-green-500/20 text-green-400 px-2 rounded-xl font-bold transition-all" 
-                : "settings-pill text-[18px] font-mono bg-red-500/20 text-red-400 px-2 rounded-xl font-bold transition-all";
+            if (sum === 100) { totalEl.className = "text-[14px] font-mono bg-green-500/20 text-green-400 px-2 rounded font-bold transition-all"; } else { totalEl.className = "text-[14px] font-mono bg-red-500/20 text-red-400 px-2 rounded font-bold transition-all"; }
         }
 
         function renderChipEditor() {
-            document.getElementById('chipEditorContainer').innerHTML = state.chipSet.map((c, i) => `
+            const cont = document.getElementById('chipEditorContainer');
+            cont.innerHTML = state.chipSet.map((c, i) => `
                 <div class="flex flex-col gap-1 bg-black/40 p-1.5 rounded-lg border border-white/5 text-white">
                     <div class="flex gap-2 items-center">
-                        <div class="flex flex-col gap-1 shrink-0"><input type="color" value="${c.color}" class="w-5 h-5 main-color-in"><input type="color" value="${c.stripeColor}" class="w-5 h-5 stripe-color-in"><input type="color" value="${c.accentColor}" class="w-5 h-5 accent-color-in"></div>
+                        <div class="flex flex-col gap-1 shrink-0">
+                            <input type="color" value="${c.color}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer main-color-in" title="Main Color">
+                            <input type="color" value="${c.stripeColor}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer stripe-color-in" title="Segment Color">
+                            <input type="color" value="${c.accentColor}" class="w-5 h-5 rounded border-none bg-transparent cursor-pointer accent-color-in" title="Inlay Color">
+                        </div>
                         <div class="chip-canvas-wrapper !w-16 !h-16" data-chip-index="${i}"></div>
                         <input type="number" value="${c.value}" class="w-full bg-transparent text-[18px] p-1 chip-val-in font-mono text-white">
                         <button onclick="removeChip(${i})" class="text-white/20 hover:text-red-500">×</button>
@@ -872,110 +866,79 @@
             refreshAllChips();
         }
         window.removeChip = (i) => { state.chipSet.splice(i, 1); renderChipEditor(); };
-        document.getElementById('addChipBtn').addEventListener('click', () => { state.chipSet.push({color: '#fff', stripeColor: '#000', accentColor: '#fff', value: 0}); renderChipEditor(); });
+        document.getElementById('addChipBtn').addEventListener('click', () => { state.chipSet.push({color: '#ffffff', stripeColor: '#000000', accentColor: '#ffffff', value: 0}); renderChipEditor(); });
 
         function renderPayoutSettings() {
-            document.getElementById('payoutStructureContainer').innerHTML = state.payouts.map((p, i) => `<div class="flex gap-2 items-center bg-black/40 p-1.5 rounded-lg border border-white/5 text-white"><span class="w-8 text-[10px] opacity-30 font-bold">${i+1}.</span><input type="number" value="${p}" class="flex-grow bg-transparent text-[14px] payout-in font-mono text-white" oninput="updatePayoutSum()">%<button onclick="removePayout(${i})" class="text-white/20 hover:text-red-500">×</button></div>`).join('');
+            document.getElementById('payoutStructureContainer').innerHTML = state.payouts.map((p, i) => `<div class="flex gap-2 items-center bg-black/40 p-1.5 rounded-lg border border-white/5 text-white"><span class="w-8 text-[10px] font-black opacity-30 text-white font-bold">${i+1}.</span><input type="number" value="${p}" class="flex-grow bg-transparent text-[14px] payout-in font-mono text-white" oninput="updatePayoutSum()">%<button onclick="removePayout(${i})" class="text-white/20 hover:text-red-500">×</button></div>`).join('');
             updatePayoutSum();
         }
         window.removePayout = (i) => { state.payouts.splice(i, 1); renderPayoutSettings(); };
         document.getElementById('addPayoutBtn').addEventListener('click', () => { state.payouts.push(0); renderPayoutSettings(); });
 
-        // --- STRUCTURE SETTINGS & DRAG AND DROP ---
-        window.handleDragStart = (e, index) => {
-            dragSrcEl = e.target.closest('.structure-row');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', index);
-            if(dragSrcEl) dragSrcEl.classList.add('dragging');
-        };
-
-        window.handleDragOver = (e) => {
-            if (e.preventDefault) e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            const row = e.target.closest('.structure-row');
-            if(row) row.classList.add('drag-over');
-            return false;
-        };
-
-        window.handleDragLeave = (e) => {
-            const row = e.target.closest('.structure-row');
-            if(row) row.classList.remove('drag-over');
-        };
-
-        window.handleDrop = (e, index) => {
-            if (e.stopPropagation) e.stopPropagation();
-            const dragIdx = parseInt(e.dataTransfer.getData('text/html'));
-            const dropIdx = index;
-            if (dragSrcEl && dragIdx !== dropIdx) {
-                const item = state.structure[dragIdx];
-                state.structure.splice(dragIdx, 1);
-                state.structure.splice(dropIdx, 0, item);
-                renderStructureSettings();
-            }
-            return false;
-        };
-
-        window.handleDragEnd = (e) => {
-            document.querySelectorAll('.structure-row').forEach(row => {
-                row.classList.remove('dragging');
-                row.classList.remove('drag-over');
-            });
-        };
-
         function renderStructureSettings() {
-            let lC = 0;
+            let levelCount = 0;
             document.getElementById('structureContainer').innerHTML = state.structure.map((l, i) => {
-                if(l.type === 'level') lC++;
-                const btns = `<div class="flex flex-col gap-0.5 mr-1 shrink-0"><button onclick="moveItem(${i}, -1)" ${i===0?'disabled':''} class="text-white/20 hover:text-white">↑</button><button onclick="moveItem(${i}, 1)" ${i===state.structure.length-1?'disabled':''} class="text-white/20 hover:text-white">↓</button></div>`;
-                
-                // DnD Attributes
-                const dndAttrs = `draggable="true" ondragstart="handleDragStart(event, ${i})" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, ${i})" ondragend="handleDragEnd(event)"`;
-                
-                if (l.type === 'break') return `<div class="structure-row flex flex-col gap-1 bg-blue-900/10 p-2 rounded-xl border border-blue-500/30 group relative text-white text-[16px]" ${dndAttrs}><div class="flex gap-3 items-center">${btns}<span class="w-8 text-[14px] font-black text-blue-400 uppercase">B</span><div class="flex gap-1 items-center bg-black/40 px-2 rounded"><input type="number" value="${l.duration}" class="w-12 bg-transparent p-1 rounded text-[16px] dur-in font-mono text-white text-center"><span class="text-[10px] opacity-40 font-bold uppercase">min</span></div><input type="text" value="${l.message}" class="flex-grow bg-black/40 p-1 rounded text-[14px] msg-in text-white font-bold" placeholder="..."><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500 text-[18px]">×</button></div></div>`;
-                return `<div class="structure-row flex flex-col gap-1 bg-white/5 p-2 rounded-xl border border-white/10 group relative text-white text-[16px]" ${dndAttrs}><div class="flex gap-3 items-center">${btns}<span class="w-10 text-[14px] font-black text-red-500 uppercase">L${lC}</span><div class="flex gap-1 items-center bg-black/40 px-2 rounded border border-white/10"><input type="number" value="${l.duration || state.levelDuration}" class="w-12 bg-transparent text-[16px] dur-in font-mono text-white text-center"><span class="text-[10px] opacity-40 font-bold uppercase">min</span></div><input type="number" value="${l.sb}" class="w-full bg-black/30 p-1 rounded text-[16px] sb-in font-mono text-center"><input type="number" value="${l.bb}" class="w-full bg-black/30 p-1 rounded text-[16px] bb-in font-mono text-center"><input type="number" value="${l.ante}" class="w-full bg-black/30 p-1 rounded text-[16px] ante-in font-mono text-center"><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500 text-[18px]">×</button></div></div>`;
+                if(l.type === 'level') levelCount++;
+                const commonHeader = `<div class=\"flex flex-col gap-0.5 mr-1 shrink-0\"><button onclick=\"moveItem(${i}, -1)\" ${i === 0 ? 'disabled' : 'class=\"text-white/20 hover:text-white\"'}><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"m18 15-6-6-6 6\"/></svg></button><button onclick=\"moveItem(${i}, 1)\" ${i === state.structure.length - 1 ? 'disabled' : 'class=\"text-white/20 hover:text-white\"'}><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"><path d=\"m6 9 6 6 6-6\"/></svg></button></div>`;
+                if (l.type === 'break') return `<div class=\"flex flex-col gap-1 bg-blue-900/10 p-2 rounded-xl border border-blue-500/30 group relative text-white text-[16px]\"><div class=\"flex gap-3 items-center\">${commonHeader}<span class=\"w-8 text-[14px] font-black text-blue-400 uppercase\">B</span><div class=\"flex gap-1 items-center bg-black/40 px-2 rounded\"><input type=\"number\" value=\"${l.duration}\" class=\"w-12 bg-transparent p-1 rounded text-[16px] dur-in font-mono text-white text-center\"><span class=\"text-[10px] opacity-40 font-bold uppercase\">min</span></div><input type=\"text\" value=\"${l.message}\" class=\"flex-grow bg-black/40 p-1 rounded text-[14px] msg-in text-white font-bold\" placeholder=\"...\"><button onclick=\"removeLevel(${i})\" class=\"text-white/20 hover:text-red-500 text-[18px]\">×</button></div></div>`;
+                return `<div class=\"flex flex-col gap-1 bg-white/5 p-2 rounded-xl border border-white/10 group relative text-white text-[16px]\"><div class=\"flex gap-3 items-center\">${commonHeader}<span class=\"w-10 text-[14px] font-black text-red-500 uppercase\">L${levelCount}</span><div class=\"flex gap-1 items-center bg-black/40 px-2 rounded border border-white/10\"><input type=\"number\" value=\"${l.duration || state.levelDuration}\" class=\"w-12 bg-transparent text-[16px] dur-in font-mono text-white text-center\"><span class=\"text-[10px] opacity-40 font-bold uppercase\">min</span></div><input type=\"number\" value=\"${l.sb}\" class=\"w-full bg-black/30 p-1 rounded text-[16px] sb-in font-mono text-center\"><input type=\"number\" value=\"${l.bb}\" class=\"w-full bg-black/30 p-1 rounded text-[16px] bb-in font-mono text-center\"><input type=\"number\" value=\"${l.ante}\" class=\"w-full bg-black/30 p-1 rounded text-[16px] ante-in font-mono text-center\"><button onclick=\"removeLevel(${i})\" class=\"text-white/20 hover:text-red-500 text-[18px]\">×</button></div></div>`;
+            }).join('');
+        } {
+            let levelCount = 0;
+            document.getElementById('structureContainer').innerHTML = state.structure.map((l, i) => {
+                if(l.type === 'level') levelCount++;
+                const commonHeader = `<div class="flex flex-col gap-0.5 mr-1 shrink-0"><button onclick="moveItem(${i}, -1)" ${i === 0 ? 'disabled' : 'class="text-white/20 hover:text-white"'}><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button><button onclick="moveItem(${i}, 1)" ${i === state.structure.length - 1 ? 'disabled' : 'class="text-white/20 hover:text-white"'}><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button></div>`;
+                if (l.type === 'break') return `<div class="flex flex-col gap-1 bg-blue-900/10 p-1.5 rounded-lg border border-blue-500/20 group relative text-white"><div class="flex gap-2 items-center">${commonHeader}<span class="w-8 text-[12px] font-black text-blue-400 uppercase">B</span><div class="flex gap-1 items-center bg-black/40 px-1 rounded"><input type="number" value="${l.duration}" class="w-10 bg-transparent p-0.5 rounded text-[14px] dur-in font-mono text-white text-center"><span class="text-[7px] opacity-30 font-bold uppercase">min</span></div><input type="text" value="${l.message}" class="flex-grow bg-black/40 p-0.5 rounded text-[11px] msg-in text-white font-bold" placeholder="..."><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button></div></div>`;
+                return `<div class="flex flex-col gap-1 bg-white/5 p-1.5 rounded-lg border border-white/5 group relative text-white"><div class="flex gap-2 items-center">${commonHeader}<span class="w-6 text-[10px] font-black text-red-500 uppercase">L${levelCount}</span><div class="flex gap-1 items-center bg-black/40 px-1 rounded border border-white/5"><input type="number" value="${l.duration || state.levelDuration}" class="w-8 bg-transparent text-[14px] dur-in font-mono text-white text-center"><span class="text-[7px] opacity-30 font-bold uppercase">min</span></div><input type="number" value="${l.sb}" class="w-full bg-black/30 p-0.5 rounded text-[14px] sb-in font-mono text-center"><input type="number" value="${l.bb}" class="w-full bg-black/30 p-0.5 rounded text-[14px] bb-in font-mono text-center"><input type="number" value="${l.ante}" class="w-full bg-black/30 p-0.5 rounded text-[14px] ante-in font-mono text-center"><button onclick="removeLevel(${i})" class="text-white/20 hover:text-red-500">×</button></div></div>`;
             }).join('');
         }
+
         window.removeLevel = (i) => { state.structure.splice(i, 1); renderStructureSettings(); };
         window.moveItem = (idx, dir) => { const el = state.structure.splice(idx, 1)[0]; state.structure.splice(idx + dir, 0, el); renderStructureSettings(); };
         document.getElementById('addLevelBtn').addEventListener('click', () => { state.structure.push({type: 'level', sb: 0, bb: 0, ante: 0, duration: 20}); renderStructureSettings(); });
         document.getElementById('addBreakBtn').addEventListener('click', () => { state.structure.push({type: 'break', duration: 15, message: 'Break'}); renderStructureSettings(); });
 
         document.getElementById('settingsBtn').addEventListener('click', () => {
-            if (!isAdmin) return;
             document.getElementById('buyInCost').value = state.buyInCost; document.getElementById('buyInChips').value = state.buyInChips;
             document.getElementById('rebuyCost').value = state.rebuyCost; document.getElementById('rebuyChips').value = state.rebuyChips;
             document.getElementById('addOnCost').value = state.addOnCost; document.getElementById('addOnChips').value = state.addOnChips;
             document.getElementById('poolDeduction').value = state.poolDeduction; document.getElementById('levelDurationInput').value = state.levelDuration;
-            document.getElementById('adminPinSetting').value = state.adminPin || "1234";
             renderChipEditor(); renderPayoutSettings(); renderStructureSettings(); document.getElementById('settingsOverlay').classList.remove('hidden');
         });
 
+        document.getElementById('closeSettings').addEventListener('click', () => document.getElementById('settingsOverlay').classList.add('hidden'));
+
         document.getElementById('saveSettings').addEventListener('click', () => {
-            state.buyInCost = parseInt(document.getElementById('buyInCost').value)||0; state.buyInChips = parseInt(document.getElementById('buyInChips').value)||0;
-            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value)||0; state.rebuyChips = parseInt(document.getElementById('rebuyChips').value)||0;
-            state.addOnCost = parseInt(document.getElementById('addOnCost').value)||0; state.addOnChips = parseInt(document.getElementById('addOnChips').value)||0;
-            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value)||0; state.levelDuration = parseInt(document.getElementById('levelDurationInput').value)||20;
+            state.buyInCost = parseInt(document.getElementById('buyInCost').value) || 0; state.buyInChips = parseInt(document.getElementById('buyInChips').value) || 0;
+            state.rebuyCost = parseInt(document.getElementById('rebuyCost').value) || 0; state.rebuyChips = parseInt(document.getElementById('rebuyChips').value) || 0;
+            state.addOnCost = parseInt(document.getElementById('addOnCost').value) || 0; state.addOnChips = parseInt(document.getElementById('addOnChips').value) || 0;
+            state.poolDeduction = parseInt(document.getElementById('poolDeduction').value) || 0; state.levelDuration = parseInt(document.getElementById('levelDurationInput').value) || 20;
             state.chipSet = Array.from(document.querySelectorAll('#chipEditorContainer > div')).map(d => ({ 
-                color: d.querySelector('.main-color-in').value, stripeColor: d.querySelector('.stripe-color-in').value, accentColor: d.querySelector('.accent-color-in').value, value: parseInt(d.querySelector('.chip-val-in').value) 
+                color: d.querySelector('.main-color-in').value, 
+                stripeColor: d.querySelector('.stripe-color-in').value, 
+                accentColor: d.querySelector('.accent-color-in').value,
+                value: parseInt(d.querySelector('.chip-val-in').value) 
             }));
-            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value)||0);
+            state.payouts = Array.from(document.querySelectorAll('.payout-in')).map(i => parseInt(i.value) || 0);
             state.structure = Array.from(document.querySelectorAll('#structureContainer > div')).map(r => {
-                const dur = parseInt(r.querySelector('.dur-in').value)||20;
+                const durIn = r.querySelector('.dur-in');
+                const dur = durIn ? parseInt(durIn.value) : 20;
                 const msg = r.querySelector('.msg-in');
                 return msg ? { type: 'break', duration: dur, message: msg.value } : { type: 'level', sb: parseInt(r.querySelector('.sb-in').value), bb: parseInt(r.querySelector('.bb-in').value), ante: parseInt(r.querySelector('.ante-in').value), duration: dur };
             });
-            state.adminPin = document.getElementById('adminPinSetting').value || "1234";
-            saveData();
-            document.getElementById('settingsOverlay').classList.add('hidden');
+            updateTimerUI(); renderPlayers(); calculateStats(); saveData(); document.getElementById('settingsOverlay').classList.add('hidden');
         });
-        document.getElementById('closeSettings').addEventListener('click', () => document.getElementById('settingsOverlay').classList.add('hidden'));
 
-        // Button Listeners
         document.getElementById('toggleBtn').addEventListener('click', toggleTimer);
         document.getElementById('nextBtn').addEventListener('click', nextLevel);
-        document.getElementById('prevBtn').addEventListener('click', prevLevel);
+        document.getElementById('prevBtn').addEventListener('click', () => { if (state.currentLevel > 0) { state.currentLevel--; state.currentTime = ((state.structure[state.currentLevel].duration || state.levelDuration) * 60); updateTimerUI(); saveData(); } });
 
-        window.onload = async () => { if (auth) await initAuth(); };
+        window.onload = async () => { 
+            if (auth) await initAuth(); 
+            updateTimerUI(); 
+            renderPlayers(); 
+            calculateStats();
+        };
     </script>
 </body>
 </html>
